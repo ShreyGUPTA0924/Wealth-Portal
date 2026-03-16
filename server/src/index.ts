@@ -8,6 +8,8 @@ import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 
 import { apiLimiter } from './middleware/rateLimit.middleware';
+import { connectRedis } from './lib/redis';
+import { startPriceSyncJob } from './jobs/priceSync.job';
 
 // ─── App Setup ────────────────────────────────────────────────────────────────
 
@@ -66,22 +68,22 @@ app.get('/health', (_req: Request, res: Response) => {
 // Uncomment each line when the corresponding router is created.
 
 import authRouter from './routes/auth.routes';
+import marketRouter from './routes/market.routes';
 // import holdingsRouter from './routes/holdings.routes';
 // import portfolioRouter from './routes/portfolio.routes';
 // import goalsRouter from './routes/goals.routes';
 // import dashboardRouter from './routes/dashboard.routes';
-// import marketRouter from './routes/market.routes';
 // import familyRouter from './routes/family.routes';
 // import aiRouter from './routes/ai.routes';
 // import reportsRouter from './routes/reports.routes';
 // import notificationsRouter from './routes/notifications.routes';
 
 app.use('/api/auth', authRouter);
+app.use('/api/market', marketRouter);
 // app.use('/api/holdings', holdingsRouter);
 // app.use('/api/portfolio', portfolioRouter);
 // app.use('/api/goals', goalsRouter);
 // app.use('/api/dashboard', dashboardRouter);
-// app.use('/api/market', marketRouter);
 // app.use('/api/family', familyRouter);
 // app.use('/api/ai', aiRouter);
 // app.use('/api/reports', reportsRouter);
@@ -108,8 +110,14 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 });
 
 // ─── Start Server ─────────────────────────────────────────────────────────────
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`WealthPortal server running on port ${PORT} [${NODE_ENV}]`);
+
+  // Connect Redis (non-blocking — server works without it)
+  await connectRedis();
+
+  // Start background price-sync job
+  startPriceSyncJob();
 });
 
 export default app;

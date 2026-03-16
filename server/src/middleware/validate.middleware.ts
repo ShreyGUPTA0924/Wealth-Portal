@@ -3,27 +3,26 @@ import { z, ZodType } from 'zod';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-// Each key is optional — only supply schemas for the parts you want to validate
 interface ValidationSchemas {
-  body?: ZodType;
-  query?: ZodType;
+  body?:   ZodType;
+  query?:  ZodType;
   params?: ZodType;
 }
 
-// Collects per-target error arrays
 type ValidationErrors = Partial<Record<'body' | 'query' | 'params', z.ZodIssue[]>>;
 
 // ─── Factory ──────────────────────────────────────────────────────────────────
 
 /**
- * validate — creates an Express middleware that validates req.body / req.query
- * / req.params against the provided Zod schemas.
+ * validate — validates req.body / req.query / req.params against Zod schemas.
+ *
+ * NOTE (Express 5): req.query is a read-only getter in Express 5, so we
+ * validate it but do NOT reassign it.  Coerced/defaulted values from Zod are
+ * stored on req.validatedQuery so controllers can access them if needed.
+ * For body and params the replacement still works as expected.
  *
  * Usage:
  *   router.post('/register', validate({ body: registerSchema }), controller)
- *
- * On success:  req.body / query / params are replaced with the parsed (typed) value
- * On failure:  responds 400 with { success: false, message, errors }
  */
 export const validate = (schemas: ValidationSchemas) => {
   return (req: Request, res: Response, next: NextFunction): void => {
@@ -32,7 +31,6 @@ export const validate = (schemas: ValidationSchemas) => {
     if (schemas.body) {
       const result = schemas.body.safeParse(req.body);
       if (result.success) {
-        // Replace raw body with the cleaned / coerced Zod output
         req.body = result.data as Record<string, unknown>;
       } else {
         errors.body = result.error.issues;
@@ -42,8 +40,8 @@ export const validate = (schemas: ValidationSchemas) => {
     if (schemas.query) {
       const result = schemas.query.safeParse(req.query);
       if (result.success) {
-        // Express types req.query as ParsedQs; casting is intentional
-        req.query = result.data as typeof req.query;
+        // Express 5: req.query is read-only — store parsed result separately
+        (req as Request & { validatedQuery: unknown }).validatedQuery = result.data;
       } else {
         errors.query = result.error.issues;
       }
