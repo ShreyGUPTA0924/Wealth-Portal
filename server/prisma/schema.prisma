@@ -1,0 +1,411 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+// ─── ENUMS ───────────────────────────────────────────────────
+
+enum RiskProfile {
+  CONSERVATIVE
+  MODERATE
+  AGGRESSIVE
+}
+
+enum Relationship {
+  SELF
+  SPOUSE
+  CHILD
+  PARENT
+  OTHER
+}
+
+enum AssetClass {
+  STOCK
+  MUTUAL_FUND
+  FD
+  RD
+  PPF
+  EPF
+  NPS
+  GOLD
+  SGB
+  REAL_ESTATE
+  CRYPTO
+}
+
+enum BrokerSource {
+  MANUAL
+  ZERODHA
+  UPSTOX
+  CSV_IMPORT
+}
+
+enum TransactionType {
+  BUY
+  SELL
+  DIVIDEND
+  SIP
+  BONUS
+  SPLIT
+}
+
+enum GoalCategory {
+  RETIREMENT
+  HOUSE
+  EDUCATION
+  TRAVEL
+  EMERGENCY
+  WEDDING
+  CUSTOM
+}
+
+enum GoalHealthStatus {
+  ON_TRACK
+  AT_RISK
+  OFF_TRACK
+}
+
+enum ChecklistCategory {
+  RENT
+  UTILITY
+  DOMESTIC
+  EMI
+  SUBSCRIPTION
+  OTHER
+}
+
+enum NudgeType {
+  REBALANCE
+  EXPENSE_RATIO
+  CONCENTRATION
+  SIP_UNDERPERFORM
+  PANIC_SELL
+  HEALTH_REPORT
+}
+
+enum NudgeSeverity {
+  INFO
+  WARNING
+  URGENT
+}
+
+enum ChatRole {
+  USER
+  ASSISTANT
+}
+
+enum ReportType {
+  PORTFOLIO
+  CAPITAL_GAINS
+  FULL_FINANCIAL
+  FAMILY
+}
+
+enum ReportStatus {
+  QUEUED
+  GENERATING
+  READY
+  FAILED
+}
+
+enum NotificationType {
+  SIP_REMINDER
+  FD_MATURITY
+  REPORT_READY
+  AI_NUDGE
+  GOAL_ALERT
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+  BOTH
+}
+
+// ─── TABLES ──────────────────────────────────────────────────
+
+model User {
+  id                   String    @id @default(uuid())
+  email                String    @unique
+  passwordHash         String
+  fullName             String
+  dateOfBirth          DateTime?
+  city                 String?
+  riskProfile          RiskProfile @default(MODERATE)
+  riskScore            Int         @default(50)
+  avatarUrl            String?
+  onboardingCompleted  Boolean     @default(false)
+  onboardingStep       Int         @default(1)
+  twoFaEnabled         Boolean     @default(false)
+  twoFaSecret          String?
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+
+  // Relations
+  familyMembers   FamilyMember[]
+  portfolios      Portfolio[]
+  goals           Goal[]
+  transactions    Transaction[]
+  checklistTemplates ChecklistTemplate[]
+  checklistEntries   ChecklistEntry[]
+  aiNudges        AiNudge[]
+  chatSessions    ChatSession[]
+  reports         Report[]
+  notifications   Notification[]
+
+  @@map("users")
+}
+
+model FamilyMember {
+  id               String       @id @default(uuid())
+  userId           String
+  fullName         String
+  relationship     Relationship
+  dateOfBirth      DateTime?
+  isMinor          Boolean      @default(false)
+  monthlyAllowance Decimal?     @db.Decimal(12, 2)
+  createdAt        DateTime     @default(now())
+
+  // Relations
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  portfolio Portfolio?
+
+  @@map("family_members")
+}
+
+model Portfolio {
+  id             String   @id @default(uuid())
+  userId         String
+  familyMemberId String?  @unique
+  name           String
+  totalInvested  Decimal  @default(0) @db.Decimal(15, 2)
+  currentValue   Decimal  @default(0) @db.Decimal(15, 2)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  familyMember FamilyMember? @relation(fields: [familyMemberId], references: [id])
+  holdings     Holding[]
+  goals        Goal[]
+
+  @@map("portfolios")
+}
+
+model Holding {
+  id              String      @id @default(uuid())
+  portfolioId     String
+  userId          String
+  assetClass      AssetClass
+  symbol          String?
+  name            String
+  quantity        Decimal     @db.Decimal(18, 6)
+  avgBuyPrice     Decimal     @db.Decimal(15, 4)
+  totalInvested   Decimal     @db.Decimal(15, 2)
+  currentPrice    Decimal?    @db.Decimal(15, 4)
+  currentValue    Decimal?    @db.Decimal(15, 2)
+  pnlAbsolute     Decimal?    @db.Decimal(15, 2)
+  pnlPercent      Decimal?    @db.Decimal(8, 4)
+  xirr            Decimal?    @db.Decimal(8, 4)
+  riskScore       Int?
+  brokerSource    BrokerSource @default(MANUAL)
+  brokerHoldingId String?
+  maturityDate    DateTime?
+  interestRate    Decimal?    @db.Decimal(6, 4)
+  notes           String?
+  isActive        Boolean     @default(true)
+  firstBuyDate    DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  // Relations
+  portfolio    Portfolio      @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+  goalHoldings GoalHolding[]
+  aiNudges     AiNudge[]
+
+  @@map("holdings")
+}
+
+model Transaction {
+  id              String          @id @default(uuid())
+  holdingId       String
+  userId          String
+  type            TransactionType
+  quantity        Decimal         @db.Decimal(18, 6)
+  pricePerUnit    Decimal         @db.Decimal(15, 4)
+  totalAmount     Decimal         @db.Decimal(15, 2)
+  brokerage       Decimal?        @db.Decimal(10, 2)
+  transactionDate DateTime
+  notes           String?
+  createdAt       DateTime        @default(now())
+
+  // Relations
+  holding Holding @relation(fields: [holdingId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([transactionDate])
+  @@map("transactions")
+}
+
+model Goal {
+  id                    String           @id @default(uuid())
+  portfolioId           String
+  userId                String
+  name                  String
+  category              GoalCategory
+  targetAmount          Decimal          @db.Decimal(15, 2)
+  currentAmount         Decimal          @default(0) @db.Decimal(15, 2)
+  targetDate            DateTime
+  recommendedMonthlySip Decimal?         @db.Decimal(12, 2)
+  healthStatus          GoalHealthStatus @default(ON_TRACK)
+  priority              Int              @default(1)
+  suggestedAssetMix     Json?
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+
+  // Relations
+  portfolio    Portfolio     @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goalHoldings GoalHolding[]
+  aiNudges     AiNudge[]
+
+  @@map("goals")
+}
+
+model GoalHolding {
+  id                String   @id @default(uuid())
+  goalId            String
+  holdingId         String
+  allocationPercent Decimal  @db.Decimal(5, 2)
+  createdAt         DateTime @default(now())
+
+  // Relations
+  goal    Goal    @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  holding Holding @relation(fields: [holdingId], references: [id], onDelete: Cascade)
+
+  @@unique([goalId, holdingId])
+  @@map("goal_holdings")
+}
+
+model ChecklistTemplate {
+  id             String            @id @default(uuid())
+  userId         String
+  label          String
+  category       ChecklistCategory
+  amount         Decimal?          @db.Decimal(12, 2)
+  dueDayOfMonth  Int
+  isActive       Boolean           @default(true)
+  createdAt      DateTime          @default(now())
+
+  // Relations
+  user    User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entries ChecklistEntry[]
+
+  @@map("checklist_templates")
+}
+
+model ChecklistEntry {
+  id           String   @id @default(uuid())
+  templateId   String
+  userId       String
+  monthYear    DateTime
+  isPaid       Boolean  @default(false)
+  actualAmount Decimal? @db.Decimal(12, 2)
+  paidAt       DateTime?
+  createdAt    DateTime @default(now())
+
+  // Relations
+  template ChecklistTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([templateId, monthYear])
+  @@map("checklist_entries")
+}
+
+model AiNudge {
+  id               String        @id @default(uuid())
+  userId           String
+  nudgeType        NudgeType
+  title            String
+  message          String
+  severity         NudgeSeverity @default(INFO)
+  relatedHoldingId String?
+  relatedGoalId    String?
+  isRead           Boolean       @default(false)
+  isDismissed      Boolean       @default(false)
+  createdAt        DateTime      @default(now())
+
+  // Relations
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  holding Holding? @relation(fields: [relatedHoldingId], references: [id])
+  goal    Goal?    @relation(fields: [relatedGoalId], references: [id])
+
+  @@index([createdAt])
+  @@map("ai_nudges")
+}
+
+model ChatSession {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String?
+  createdAt DateTime @default(now())
+
+  // Relations
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages ChatMessage[]
+
+  @@map("chat_sessions")
+}
+
+model ChatMessage {
+  id        String   @id @default(uuid())
+  sessionId String
+  role      ChatRole
+  content   String
+  createdAt DateTime @default(now())
+
+  // Relations
+  session ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
+  @@map("chat_messages")
+}
+
+model Report {
+  id         String       @id @default(uuid())
+  userId     String
+  reportType ReportType
+  status     ReportStatus @default(QUEUED)
+  dateFrom   DateTime?
+  dateTo     DateTime?
+  fileUrl    String?
+  fileSizeKb Int?
+  createdAt  DateTime     @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("reports")
+}
+
+model Notification {
+  id        String              @id @default(uuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String
+  channel   NotificationChannel @default(IN_APP)
+  isRead    Boolean             @default(false)
+  createdAt DateTime            @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
+  @@map("notifications")
+}

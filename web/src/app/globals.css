@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+/* ─── Brand Design Tokens ──────────────────────────────────────────────── */
+@theme {
+  --color-brand:       #3C3489;
+  --color-brand-dark:  #2d2871;
+  --color-brand-light: #ede9f5;
+  --color-brand-mid:   #5048a8;
+}
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans, Arial, Helvetica, sans-serif);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── OTP Input ─────────────────────────────────────────────────────────── */
+.otp-input {
+  width: 3rem;
+  height: 3.5rem;
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 600;
+  border: 2px solid #d1d5db;
+  border-radius: 0.75rem;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.otp-input:focus {
+  border-color: #3C3489;
+  box-shadow: 0 0 0 3px rgba(60, 52, 137, 0.15);
+}
+.otp-input:not(:placeholder-shown) {
+  border-color: #3C3489;
+  background-color: #ede9f5;
+}
