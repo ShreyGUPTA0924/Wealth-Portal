@@ -25,7 +25,7 @@ const NAV_ITEMS = [
   { label: 'Dashboard',   href: '/dashboard',  icon: LayoutDashboard },
   { label: 'Portfolio',   href: '/portfolio',  icon: Briefcase },
   { label: 'Goals',       href: '/goals',      icon: Target },
-  { label: 'AI Advisor',  href: '/ai-advisor', icon: Bot },
+  { label: 'AI Advisor',  href: '/advisor',    icon: Bot },
   { label: 'Family',      href: '/family',     icon: Users },
   { label: 'Learn',       href: '/learn',      icon: BookOpen },
   { label: 'Reports',     href: '/reports',    icon: FileBarChart2 },
