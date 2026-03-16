@@ -75,6 +75,7 @@ import goalsRouter from './routes/goals.routes';
 import dashboardRouter from './routes/dashboard.routes';
 import familyRouter from './routes/family.routes';
 import aiRouter from './routes/ai.routes';
+import learnRouter from './routes/learn.routes';
 // import reportsRouter from './routes/reports.routes';
 // import notificationsRouter from './routes/notifications.routes';
 
@@ -86,6 +87,7 @@ app.use('/api/goals', goalsRouter);
 app.use('/api/dashboard', dashboardRouter);
 app.use('/api/family', familyRouter);
 app.use('/api/ai', aiRouter);
+app.use('/api/learn', learnRouter);
 // app.use('/api/reports', reportsRouter);
 // app.use('/api/notifications', notificationsRouter);
 
