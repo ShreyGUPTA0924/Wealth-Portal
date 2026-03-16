@@ -69,8 +69,8 @@ app.get('/health', (_req: Request, res: Response) => {
 
 import authRouter from './routes/auth.routes';
 import marketRouter from './routes/market.routes';
-// import holdingsRouter from './routes/holdings.routes';
-// import portfolioRouter from './routes/portfolio.routes';
+import holdingsRouter from './routes/holdings.routes';
+import portfolioRouter from './routes/portfolio.routes';
 // import goalsRouter from './routes/goals.routes';
 // import dashboardRouter from './routes/dashboard.routes';
 // import familyRouter from './routes/family.routes';
@@ -80,8 +80,8 @@ import marketRouter from './routes/market.routes';
 
 app.use('/api/auth', authRouter);
 app.use('/api/market', marketRouter);
-// app.use('/api/holdings', holdingsRouter);
-// app.use('/api/portfolio', portfolioRouter);
+app.use('/api/holdings', holdingsRouter);
+app.use('/api/portfolio', portfolioRouter);
 // app.use('/api/goals', goalsRouter);
 // app.use('/api/dashboard', dashboardRouter);
 // app.use('/api/family', familyRouter);
