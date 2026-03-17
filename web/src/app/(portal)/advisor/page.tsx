@@ -83,7 +83,7 @@ function severityBadgeClass(severity: string): string {
 }
 
 function Skeleton({ className }: { className?: string }) {
-  return <div className={`animate-pulse bg-gray-100 rounded-xl ${className ?? ''}`} />;
+  return <div className={`animate-pulse bg-border rounded-xl ${className ?? ''}`} />;
 }
 
 function formatDate(iso: string): string {
@@ -139,7 +139,7 @@ function ChatBubble({
         className={`max-w-[78%] px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap
           ${isUser
             ? 'bg-[#3C3489] text-white rounded-tr-sm'
-            : 'bg-gray-100 text-gray-800 rounded-tl-sm'
+            : 'bg-border text-foreground rounded-tl-sm'
           }`}
       >
         {content}
@@ -167,8 +167,8 @@ function SessionList({
   isLoading: boolean;
 }) {
   return (
-    <div className="w-[250px] shrink-0 bg-white border-r border-gray-100 flex flex-col h-full">
-      <div className="p-3 border-b border-gray-100">
+    <div className="w-[250px] shrink-0 bg-background-card border-r border-border flex flex-col h-full">
+      <div className="p-3 border-b border-border">
         <button
           onClick={onNew}
           className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl bg-[#3C3489] text-white text-sm font-medium hover:bg-[#2d2871] transition-colors"
@@ -182,7 +182,7 @@ function SessionList({
         {isLoading ? (
           [...Array(4)].map((_, i) => <Skeleton key={i} className="h-12 mx-1" />)
         ) : sessions.length === 0 ? (
-          <div className="text-center py-8 text-gray-400">
+          <div className="text-center py-8 text-foreground-muted">
             <MessageSquare className="w-8 h-8 mx-auto mb-2 text-gray-200" />
             <p className="text-xs">No conversations yet</p>
           </div>
@@ -194,13 +194,13 @@ function SessionList({
               className={`w-full text-left px-3 py-2.5 rounded-xl transition-colors group
                 ${activeId === s.id
                   ? 'bg-[#3C3489]/10 text-[#3C3489]'
-                  : 'hover:bg-gray-50 text-gray-700'
+                  : 'hover:bg-border/50 text-foreground'
                 }`}
             >
-              <p className={`text-sm font-medium truncate ${activeId === s.id ? 'text-[#3C3489]' : 'text-gray-800'}`}>
+              <p className={`text-sm font-medium truncate ${activeId === s.id ? 'text-[#3C3489]' : 'text-foreground'}`}>
                 {s.title}
               </p>
-              <p className="text-xs text-gray-400 mt-0.5">
+              <p className="text-xs text-foreground-muted mt-0.5">
                 {formatDate(s.createdAt)} · {s.messageCount} msgs
               </p>
             </button>
@@ -233,15 +233,15 @@ function InsightsSidebar({
   const unread = nudges.filter((n) => !n.isRead).slice(0, 5);
 
   return (
-    <div className="w-[280px] shrink-0 bg-white border-l border-gray-100 flex flex-col h-full overflow-y-auto">
+    <div className="w-[280px] shrink-0 bg-background-card border-l border-border flex flex-col h-full overflow-y-auto">
       {/* Health Score */}
-      <div className="p-4 border-b border-gray-100">
+      <div className="p-4 border-b border-border">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-gray-900">Financial Health</h3>
+          <h3 className="text-sm font-semibold text-foreground">Financial Health</h3>
           <button
             onClick={onRefreshAnalysis}
             disabled={isAnalysing}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-[#3C3489] hover:bg-gray-50 transition-colors disabled:opacity-40"
+            className="p-1.5 rounded-lg text-foreground-muted hover:text-[#3C3489] hover:bg-border/50 transition-colors disabled:opacity-40"
             title="Refresh analysis"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isAnalysing ? 'animate-spin' : ''}`} />
@@ -255,28 +255,28 @@ function InsightsSidebar({
             <div className="flex items-center gap-3">
               <ScoreGauge score={healthScore.overall} />
               <div className="flex-1 min-w-0">
-                <p className="text-xs text-gray-500 mb-1.5">Score Breakdown</p>
+                <p className="text-xs text-foreground-muted mb-1.5">Score Breakdown</p>
                 {Object.entries(healthScore.breakdown).map(([key, val]) => (
                   <div key={key} className="flex items-center gap-2 mb-1">
-                    <span className="text-xs text-gray-500 capitalize w-20 shrink-0">{key}</span>
-                    <div className="flex-1 h-1.5 bg-white/70 rounded-full overflow-hidden">
+                    <span className="text-xs text-foreground-muted capitalize w-20 shrink-0">{key}</span>
+                    <div className="flex-1 h-1.5 bg-background-card/70 rounded-full overflow-hidden">
                       <div
                         className="h-full bg-[#3C3489] rounded-full"
                         style={{ width: `${val}%` }}
                       />
                     </div>
-                    <span className="text-xs font-medium text-gray-600 w-7 text-right shrink-0">{Math.round(val)}</span>
+                    <span className="text-xs font-medium text-foreground-muted w-7 text-right shrink-0">{Math.round(val)}</span>
                   </div>
                 ))}
               </div>
             </div>
             {healthScore.summary && (
-              <p className="text-xs text-gray-600 mt-2 leading-relaxed">{healthScore.summary}</p>
+              <p className="text-xs text-foreground-muted mt-2 leading-relaxed">{healthScore.summary}</p>
             )}
           </div>
         ) : (
-          <div className="rounded-xl bg-gray-50 p-3 text-center">
-            <p className="text-xs text-gray-400">Click refresh to compute your health score</p>
+          <div className="rounded-xl bg-border/50 p-3 text-center">
+            <p className="text-xs text-foreground-muted">Click refresh to compute your health score</p>
           </div>
         )}
       </div>
@@ -284,7 +284,7 @@ function InsightsSidebar({
       {/* Active Nudges */}
       <div className="p-4 flex-1">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-gray-900">Active Nudges</h3>
+          <h3 className="text-sm font-semibold text-foreground">Active Nudges</h3>
           {unread.length > 0 && (
             <Link
               href="/advisor/nudges"
@@ -300,7 +300,7 @@ function InsightsSidebar({
             {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-16" />)}
           </div>
         ) : unread.length === 0 ? (
-          <div className="text-center py-6 text-gray-400">
+          <div className="text-center py-6 text-foreground-muted">
             <Sparkles className="w-7 h-7 mx-auto mb-2 text-gray-200" />
             <p className="text-xs">No active nudges</p>
             <p className="text-xs mt-0.5">Click refresh to analyse your portfolio</p>
@@ -308,12 +308,12 @@ function InsightsSidebar({
         ) : (
           <div className="space-y-2">
             {unread.map((n) => (
-              <div key={n.id} className="rounded-xl border border-gray-100 p-3 bg-gray-50/50">
+              <div key={n.id} className="rounded-xl border border-border p-3 bg-border/50/50">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-start gap-2 min-w-0">
                     {severityIcon(n.severity)}
                     <div className="min-w-0">
-                      <p className="text-xs font-semibold text-gray-800 leading-tight">{n.title}</p>
+                      <p className="text-xs font-semibold text-foreground leading-tight">{n.title}</p>
                       <span className={`inline-block mt-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded-full ${severityBadgeClass(n.severity)}`}>
                         {n.severity}
                       </span>
@@ -321,12 +321,12 @@ function InsightsSidebar({
                   </div>
                   <button
                     onClick={() => onDismissNudge(n.id)}
-                    className="text-gray-300 hover:text-gray-500 shrink-0 mt-0.5 transition-colors"
+                    className="text-gray-300 hover:text-foreground-muted shrink-0 mt-0.5 transition-colors"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
                 </div>
-                <p className="text-xs text-gray-500 mt-1.5 leading-relaxed line-clamp-2">{n.message}</p>
+                <p className="text-xs text-foreground-muted mt-1.5 leading-relaxed line-clamp-2">{n.message}</p>
               </div>
             ))}
           </div>
@@ -524,7 +524,7 @@ export default function AdvisorPage() {
   const nudges   = nudgesData?.nudges ?? [];
 
   return (
-    <div className="-m-4 lg:-m-6 h-[calc(100vh-56px)] flex bg-white overflow-hidden">
+    <div className="-m-4 lg:-m-6 h-[calc(100vh-56px)] flex bg-background-card overflow-hidden">
       {/* Left: Session list */}
       <SessionList
         sessions={sessions}
@@ -537,13 +537,13 @@ export default function AdvisorPage() {
       {/* Center: Chat */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Chat header */}
-        <div className="h-14 border-b border-gray-100 flex items-center px-5 shrink-0">
+        <div className="h-14 border-b border-border flex items-center px-5 shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#3C3489] to-[#5048a8] flex items-center justify-center">
               <Bot className="w-4 h-4 text-white" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-gray-900">WealthPortal AI</p>
+              <p className="text-sm font-semibold text-foreground">WealthPortal AI</p>
               <p className="text-xs text-green-500 font-medium">Online · Powered by Gemini</p>
             </div>
           </div>
@@ -556,8 +556,8 @@ export default function AdvisorPage() {
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#3C3489] to-[#5048a8] flex items-center justify-center mb-4">
                 <Sparkles className="w-8 h-8 text-white" />
               </div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-2">Your AI Financial Advisor</h2>
-              <p className="text-sm text-gray-500 mb-6 max-w-sm">
+              <h2 className="text-lg font-semibold text-foreground mb-2">Your AI Financial Advisor</h2>
+              <p className="text-sm text-foreground-muted mb-6 max-w-sm">
                 Ask me anything about your investments, goals, or financial planning. I have full context of your portfolio.
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-lg">
@@ -565,7 +565,7 @@ export default function AdvisorPage() {
                   <button
                     key={p}
                     onClick={() => sendMessage(p)}
-                    className="text-left px-4 py-3 rounded-xl border border-gray-200 hover:border-[#3C3489]/40 hover:bg-[#3C3489]/5 text-sm text-gray-700 transition-colors group"
+                    className="text-left px-4 py-3 rounded-xl border border-border hover:border-[#3C3489]/40 hover:bg-[#3C3489]/5 text-sm text-foreground transition-colors group"
                   >
                     <span className="group-hover:text-[#3C3489] transition-colors">{p}</span>
                   </button>
@@ -587,7 +587,7 @@ export default function AdvisorPage() {
               <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#3C3489] to-[#5048a8] flex items-center justify-center shrink-0">
                 <Bot className="w-4 h-4 text-white" />
               </div>
-              <div className="bg-gray-100 rounded-2xl rounded-tl-sm px-4 py-3 flex items-center gap-1.5">
+              <div className="bg-border rounded-2xl rounded-tl-sm px-4 py-3 flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-gray-400 animate-bounce [animation-delay:0ms]" />
                 <span className="w-2 h-2 rounded-full bg-gray-400 animate-bounce [animation-delay:150ms]" />
                 <span className="w-2 h-2 rounded-full bg-gray-400 animate-bounce [animation-delay:300ms]" />
@@ -599,8 +599,8 @@ export default function AdvisorPage() {
         </div>
 
         {/* Input bar */}
-        <div className="border-t border-gray-100 p-4 shrink-0">
-          <div className="flex items-end gap-3 bg-gray-50 rounded-2xl border border-gray-200 px-4 py-3 focus-within:border-[#3C3489]/50 focus-within:bg-white transition-colors">
+        <div className="border-t border-border p-4 shrink-0">
+          <div className="flex items-end gap-3 bg-border/50 rounded-2xl border border-border px-4 py-3 focus-within:border-[#3C3489]/50 focus-within:bg-background-card transition-colors">
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -613,7 +613,7 @@ export default function AdvisorPage() {
               placeholder="Ask about your investments, goals, or financial health…"
               rows={1}
               disabled={isStreaming}
-              className="flex-1 bg-transparent text-sm text-gray-800 resize-none outline-none placeholder-gray-400 max-h-32 leading-relaxed disabled:opacity-50"
+              className="flex-1 bg-transparent text-sm text-foreground resize-none outline-none placeholder-gray-400 max-h-32 leading-relaxed disabled:opacity-50"
               style={{ height: 'auto' }}
               ref={(el) => {
                 if (el) {
@@ -630,7 +630,7 @@ export default function AdvisorPage() {
               <Send className="w-4 h-4" />
             </button>
           </div>
-          <p className="text-[10px] text-gray-400 mt-1.5 text-center">
+          <p className="text-[10px] text-foreground-muted mt-1.5 text-center">
             AI may make mistakes. Always verify financial advice with a certified advisor.
           </p>
         </div>

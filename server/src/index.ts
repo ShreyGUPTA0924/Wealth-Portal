@@ -8,6 +8,7 @@ import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 
 import { apiLimiter } from './middleware/rateLimit.middleware';
+import { authenticate } from './middleware/auth.middleware';
 import { connectRedis } from './lib/redis';
 import { startPriceSyncJob } from './jobs/priceSync.job';
 
@@ -76,6 +77,7 @@ import dashboardRouter from './routes/dashboard.routes';
 import familyRouter from './routes/family.routes';
 import aiRouter from './routes/ai.routes';
 import learnRouter from './routes/learn.routes';
+import settingsRouter from './routes/settings.routes';
 // import reportsRouter from './routes/reports.routes';
 // import notificationsRouter from './routes/notifications.routes';
 
@@ -88,6 +90,7 @@ app.use('/api/dashboard', dashboardRouter);
 app.use('/api/family', familyRouter);
 app.use('/api/ai', aiRouter);
 app.use('/api/learn', learnRouter);
+app.use('/api/settings', authenticate, settingsRouter);
 // app.use('/api/reports', reportsRouter);
 // app.use('/api/notifications', notificationsRouter);
 

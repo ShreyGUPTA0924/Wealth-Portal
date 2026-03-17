@@ -2,29 +2,82 @@
 
 /* ─── Brand Design Tokens ──────────────────────────────────────────────── */
 @theme {
-  --color-brand:       #3C3489;
-  --color-brand-dark:  #2d2871;
-  --color-brand-light: #ede9f5;
-  --color-brand-mid:   #5048a8;
+  --color-brand:       #4F46E5; /* Indigo */
+  --color-brand-dark:  #3730A3;
+  --color-brand-light: #EEF2FF;
+  --color-brand-mid:   #7C3AED; /* Violet */
+  
+  /* Additional neutral shades for glass/Stripe effects */
+  --color-offwhite:    #F5F5F7;
+  --color-charcoal:    #1A1A1A;
 }
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Apple Light Mode Palette */
+  --background: #F5F5F7;
+  --background-card: #FFFFFF;
+  --foreground: #1A1A1A;
+  --foreground-muted: #6B7280;
+  --border: rgba(0, 0, 0, 0.05);
+}
+
+.dark {
+  /* Apple Dark Mode Palette */
+  --background: #000000;
+  --background-card: #1C1C1E;
+  --foreground: #FFFFFF;
+  --foreground-muted: #9CA3AF;
+  --border: rgba(255, 255, 255, 0.1);
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-background-card: var(--background-card);
   --color-foreground: var(--foreground);
+  --color-foreground-muted: var(--foreground-muted);
+  --color-border: var(--border);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans, Arial, Helvetica, sans-serif);
   -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Shared Utilities ─────────────────────────────────────────────────── */
+.glass {
+  background: var(--background-card);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 32px -4px rgba(0, 0, 0, 0.04), 0 4px 16px -4px rgba(0, 0, 0, 0.04);
+}
+
+.dark .glass {
+  background: rgba(28, 28, 30, 0.65);
+  box-shadow: 0 8px 32px -4px rgba(0, 0, 0, 0.2), 0 4px 16px -4px rgba(0, 0, 0, 0.2);
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, var(--color-brand) 0%, var(--color-brand-mid) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.bg-gradient-stripe {
+  background: linear-gradient(135deg, var(--color-brand) 0%, var(--color-brand-mid) 100%);
+}
+
+.bg-premium-gradient {
+  background: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+}
+
+.hover-focus-glow:focus-within {
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
 }
 
 /* ─── OTP Input ─────────────────────────────────────────────────────────── */
@@ -40,10 +93,10 @@ body {
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 .otp-input:focus {
-  border-color: #3C3489;
-  box-shadow: 0 0 0 3px rgba(60, 52, 137, 0.15);
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
 }
 .otp-input:not(:placeholder-shown) {
-  border-color: #3C3489;
-  background-color: #ede9f5;
+  border-color: var(--color-brand);
+  background-color: var(--color-brand-light);
 }

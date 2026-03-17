@@ -443,19 +443,19 @@ function LessonCard({
 
   if (lesson.comingSoon) {
     return (
-      <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 p-4 flex items-center gap-4">
-        <div className="w-8 h-8 rounded-xl bg-gray-200 flex items-center justify-center text-gray-400 text-sm font-bold shrink-0">
+      <div className="rounded-2xl border border-dashed border-border bg-border/50 p-4 flex items-center gap-4">
+        <div className="w-8 h-8 rounded-xl bg-border flex items-center justify-center text-foreground-muted text-sm font-bold shrink-0">
           {index + 1}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-500">{lesson.title}</p>
+          <p className="text-sm font-medium text-foreground-muted">{lesson.title}</p>
           <div className="flex items-center gap-2 mt-1">
-            <Clock className="w-3 h-3 text-gray-400" />
-            <span className="text-xs text-gray-400">{lesson.duration}</span>
+            <Clock className="w-3 h-3 text-foreground-muted" />
+            <span className="text-xs text-foreground-muted">{lesson.duration}</span>
             <DifficultyBadge difficulty={lesson.difficulty} />
           </div>
         </div>
-        <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-gray-200 text-gray-500 shrink-0">
+        <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-border text-foreground-muted shrink-0">
           Coming Soon
         </span>
       </div>
@@ -463,7 +463,7 @@ function LessonCard({
   }
 
   return (
-    <div className={`rounded-2xl border transition-all ${open ? 'border-[#3C3489]/30 shadow-sm' : 'border-gray-100'} bg-white overflow-hidden`}>
+    <div className={`rounded-2xl border transition-all ${open ? 'border-[#3C3489]/30 shadow-sm shadow-black/5' : 'border-border'} bg-background-card overflow-hidden`}>
       <button
         onClick={() => setOpen(!open)}
         className="w-full flex items-center gap-4 p-4 text-left"
@@ -472,23 +472,23 @@ function LessonCard({
           {completed ? <CheckCircle className="w-4.5 h-4.5" size={18} /> : index + 1}
         </div>
         <div className="flex-1 min-w-0">
-          <p className={`text-sm font-semibold ${completed ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
+          <p className={`text-sm font-semibold ${completed ? 'text-foreground-muted line-through' : 'text-foreground'}`}>
             {lesson.title}
           </p>
           <div className="flex items-center gap-2 mt-1 flex-wrap">
-            <Clock className="w-3 h-3 text-gray-400" />
-            <span className="text-xs text-gray-400">{lesson.duration}</span>
+            <Clock className="w-3 h-3 text-foreground-muted" />
+            <span className="text-xs text-foreground-muted">{lesson.duration}</span>
             <DifficultyBadge difficulty={lesson.difficulty} />
           </div>
         </div>
-        {open ? <ChevronUp className="w-4 h-4 text-gray-400 shrink-0" /> : <ChevronDown className="w-4 h-4 text-gray-400 shrink-0" />}
+        {open ? <ChevronUp className="w-4 h-4 text-foreground-muted shrink-0" /> : <ChevronDown className="w-4 h-4 text-foreground-muted shrink-0" />}
       </button>
 
       {open && lesson.content && (
         <div className="px-4 pb-5 border-t border-gray-50">
           <div className="pt-4 space-y-3">
             {lesson.content.paragraphs.map((p, i) => (
-              <p key={i} className="text-sm text-gray-600 leading-relaxed">{p}</p>
+              <p key={i} className="text-sm text-foreground-muted leading-relaxed">{p}</p>
             ))}
           </div>
 
@@ -501,10 +501,10 @@ function LessonCard({
           {/* Related Terms */}
           {lesson.content.relatedTerms.length > 0 && (
             <div className="mt-4">
-              <p className="text-xs text-gray-400 font-medium mb-2">Related Terms</p>
+              <p className="text-xs text-foreground-muted font-medium mb-2">Related Terms</p>
               <div className="flex flex-wrap gap-2">
                 {lesson.content.relatedTerms.map(term => (
-                  <span key={term} className="px-2.5 py-1 rounded-lg bg-gray-100 text-gray-600 text-xs font-medium">
+                  <span key={term} className="px-2.5 py-1 rounded-lg bg-border text-foreground-muted text-xs font-medium">
                     {term}
                   </span>
                 ))}
@@ -553,7 +553,7 @@ export default function CategoryPage() {
   if (!category) {
     return (
       <div className="text-center py-20">
-        <p className="text-gray-500 text-sm">Category not found.</p>
+        <p className="text-foreground-muted text-sm">Category not found.</p>
         <button onClick={() => router.push('/learn')} className="mt-4 text-[#3C3489] text-sm font-medium hover:underline">
           Back to Learn Hub
         </button>
@@ -581,7 +581,7 @@ export default function CategoryPage() {
       {/* Back */}
       <button
         onClick={() => router.push('/learn')}
-        className="flex items-center gap-2 text-sm text-gray-500 hover:text-[#3C3489] transition-colors"
+        className="flex items-center gap-2 text-sm text-foreground-muted hover:text-[#3C3489] transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
         Back to Learn Hub
@@ -590,13 +590,13 @@ export default function CategoryPage() {
       {/* Header */}
       <div className={`rounded-2xl border p-6 ${category.color}`}>
         <div className="flex items-start gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-white/60 flex items-center justify-center text-3xl shrink-0 shadow-sm">
+          <div className="w-14 h-14 rounded-2xl bg-background-card/60 flex items-center justify-center text-3xl shrink-0 shadow-sm shadow-black/5">
             {category.icon}
           </div>
           <div className="flex-1 min-w-0">
             <h1 className={`text-xl font-bold ${category.textColor}`}>{category.label}</h1>
-            <p className="text-sm text-gray-600 mt-1 leading-relaxed">{category.description}</p>
-            <div className="flex items-center gap-3 mt-3 text-xs text-gray-500">
+            <p className="text-sm text-foreground-muted mt-1 leading-relaxed">{category.description}</p>
+            <div className="flex items-center gap-3 mt-3 text-xs text-foreground-muted">
               <span className="flex items-center gap-1">
                 <BookOpen className="w-3.5 h-3.5" /> {category.lessons.length} lessons
               </span>
@@ -611,12 +611,12 @@ export default function CategoryPage() {
         {availableLessons.length > 0 && (
           <div className="mt-5">
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs font-medium text-gray-600">
+              <span className="text-xs font-medium text-foreground-muted">
                 {completedInCategory} of {availableLessons.length} lessons completed
               </span>
               <span className={`text-xs font-bold ${category.textColor}`}>{Math.round(progressPct)}%</span>
             </div>
-            <div className="h-2 bg-white/50 rounded-full overflow-hidden">
+            <div className="h-2 bg-background-card/50 rounded-full overflow-hidden">
               <div
                 className="h-full rounded-full transition-all duration-500"
                 style={{ width: `${progressPct}%`, background: 'rgba(60,52,137,0.7)' }}

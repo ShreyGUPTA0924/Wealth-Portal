@@ -5,11 +5,12 @@ import { getPrice, type AssetClass } from '../services/market.service';
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface HoldingRow {
-  id:          string;
-  portfolioId: string;
-  assetClass:  string;
-  symbol:      string | null;
-  quantity:    { toString(): string };
+  id:            string;
+  portfolioId:   string;
+  assetClass:    string;
+  symbol:        string | null;
+  quantity:      { toString(): string };
+  totalInvested: { toString(): string };
 }
 
 // ─── Core sync logic ──────────────────────────────────────────────────────────
@@ -24,7 +25,7 @@ async function syncPrices(): Promise<void> {
         isActive: true,
         assetClass: { in: ['STOCK', 'MUTUAL_FUND', 'CRYPTO', 'GOLD', 'SGB'] },
       },
-      select: { id: true, portfolioId: true, assetClass: true, symbol: true, quantity: true },
+      select: { id: true, portfolioId: true, assetClass: true, symbol: true, quantity: true, totalInvested: true },
     });
 
     if (holdings.length === 0) return;
@@ -58,18 +59,23 @@ async function syncPrices(): Promise<void> {
                 (h.symbol === holding.symbol || holding.assetClass === 'GOLD')
             );
 
-            await Promise.allSettled(
+              await Promise.allSettled(
               matchingHoldings.map(async (h) => {
-                const qty          = parseFloat(h.quantity.toString());
-                const currentValue = qty * priceData.price;
+                const qty           = parseFloat(h.quantity.toString());
+                const totalInvested = parseFloat(h.totalInvested.toString());
+                const currentValue  = qty * priceData.price;
+                const pnlAbsolute   = currentValue - totalInvested;
+                const pnlPercent    = totalInvested > 0
+                  ? (pnlAbsolute / totalInvested) * 100
+                  : 0;
 
                 await prisma.holding.update({
                   where: { id: h.id },
                   data: {
                     currentPrice: priceData.price,
                     currentValue,
-                    pnlAbsolute:  null, // recomputed by holdings service on demand
-                    pnlPercent:   null,
+                    pnlAbsolute,
+                    pnlPercent,
                   },
                 });
               })

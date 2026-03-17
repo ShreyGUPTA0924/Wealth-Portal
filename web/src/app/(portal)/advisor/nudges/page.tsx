@@ -51,7 +51,7 @@ function nudgeTypeBadge(type: string): string {
     PANIC_SELL:       'bg-pink-100 text-pink-700',
     HEALTH_REPORT:    'bg-teal-100 text-teal-700',
   };
-  return map[type] ?? 'bg-gray-100 text-gray-600';
+  return map[type] ?? 'bg-border text-foreground-muted';
 }
 
 function nudgeTypeLabel(type: string): string {
@@ -67,7 +67,7 @@ function nudgeTypeLabel(type: string): string {
 }
 
 function Skeleton({ className }: { className?: string }) {
-  return <div className={`animate-pulse bg-gray-100 rounded-xl ${className ?? ''}`} />;
+  return <div className={`animate-pulse bg-border rounded-xl ${className ?? ''}`} />;
 }
 
 function formatDate(iso: string): string {
@@ -97,15 +97,15 @@ function NudgeCard({
 
   return (
     <div
-      className={`bg-white rounded-2xl border p-5 transition-all
-        ${!nudge.isRead ? 'border-[#3C3489]/20 shadow-sm' : 'border-gray-100'}`}
+      className={`bg-background-card rounded-2xl border p-5 transition-all
+        ${!nudge.isRead ? 'border-[#3C3489]/20 shadow-sm shadow-black/5' : 'border-border'}`}
     >
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3 min-w-0 flex-1">
           <div className="mt-0.5">{severityIcon(nudge.severity)}</div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap mb-1">
-              <h3 className={`text-sm font-semibold ${!nudge.isRead ? 'text-gray-900' : 'text-gray-600'}`}>
+              <h3 className={`text-sm font-semibold ${!nudge.isRead ? 'text-foreground' : 'text-foreground-muted'}`}>
                 {nudge.title}
               </h3>
               {!nudge.isRead && (
@@ -119,9 +119,9 @@ function NudgeCard({
               <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${nudgeTypeBadge(nudge.nudgeType)}`}>
                 {nudgeTypeLabel(nudge.nudgeType)}
               </span>
-              <span className="text-xs text-gray-400">{formatDate(nudge.createdAt)}</span>
+              <span className="text-xs text-foreground-muted">{formatDate(nudge.createdAt)}</span>
             </div>
-            <p className="text-sm text-gray-600 leading-relaxed">{nudge.message}</p>
+            <p className="text-sm text-foreground-muted leading-relaxed">{nudge.message}</p>
           </div>
         </div>
 
@@ -129,7 +129,7 @@ function NudgeCard({
           {!nudge.isRead && (
             <button
               onClick={() => onMarkRead(nudge.id)}
-              className="p-1.5 rounded-lg text-gray-400 hover:text-[#3C3489] hover:bg-gray-50 transition-colors"
+              className="p-1.5 rounded-lg text-foreground-muted hover:text-[#3C3489] hover:bg-border/50 transition-colors"
               title="Mark as read"
             >
               <CheckCheck className="w-4 h-4" />
@@ -137,7 +137,7 @@ function NudgeCard({
           )}
           <button
             onClick={() => onDismiss(nudge.id)}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-red-400 hover:bg-gray-50 transition-colors"
+            className="p-1.5 rounded-lg text-foreground-muted hover:text-red-400 hover:bg-border/50 transition-colors"
             title="Dismiss"
           >
             <X className="w-4 h-4" />
@@ -221,8 +221,8 @@ export default function NudgesPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">AI Nudges</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <h1 className="text-xl font-bold text-foreground">AI Nudges</h1>
+          <p className="text-sm text-foreground-muted mt-0.5">
             {unreadCount > 0
               ? `${unreadCount} unread nudge${unreadCount > 1 ? 's' : ''} · personalized for your portfolio`
               : 'All caught up · your portfolio is being monitored'
@@ -234,7 +234,7 @@ export default function NudgesPage() {
             <button
               onClick={() => markAllReadMutation.mutate()}
               disabled={markAllReadMutation.isPending}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border text-sm text-foreground-muted hover:bg-border/50 transition-colors disabled:opacity-50"
             >
               <BellOff className="w-4 h-4" />
               Mark all read
@@ -252,7 +252,7 @@ export default function NudgesPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-1 border-b border-gray-100">
+      <div className="flex items-center gap-1 border-b border-border">
         {FILTER_TABS.map((tab) => {
           const count =
             tab.id === 'ALL'     ? allNudges.length :
@@ -267,13 +267,13 @@ export default function NudgesPage() {
               className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors
                 ${activeTab === tab.id
                   ? 'border-[#3C3489] text-[#3C3489]'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                  : 'border-transparent text-foreground-muted hover:text-foreground'
                 }`}
             >
               {tab.label}
               {count > 0 && (
                 <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium
-                  ${activeTab === tab.id ? 'bg-[#3C3489] text-white' : 'bg-gray-100 text-gray-500'}`}>
+                  ${activeTab === tab.id ? 'bg-[#3C3489] text-white' : 'bg-border text-foreground-muted'}`}>
                   {count}
                 </span>
               )}
@@ -288,7 +288,7 @@ export default function NudgesPage() {
           {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-32" />)}
         </div>
       ) : error ? (
-        <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+        <div className="flex flex-col items-center justify-center py-20 text-foreground-muted">
           <AlertTriangle className="w-10 h-10 mb-3 text-red-400" />
           <p className="text-sm mb-3">Failed to load nudges</p>
           <button
@@ -299,12 +299,12 @@ export default function NudgesPage() {
           </button>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+        <div className="flex flex-col items-center justify-center py-20 text-foreground-muted">
           <Bell className="w-12 h-12 mb-3 text-gray-200" />
-          <p className="text-base font-medium text-gray-600 mb-1">
+          <p className="text-base font-medium text-foreground-muted mb-1">
             {activeTab === 'UNREAD' ? 'All nudges read' : 'No nudges found'}
           </p>
-          <p className="text-sm text-gray-400 mb-4">
+          <p className="text-sm text-foreground-muted mb-4">
             {activeTab === 'ALL'
               ? 'Click "Re-analyse" to check your portfolio for new issues'
               : `No ${activeTab.toLowerCase()} nudges at the moment`

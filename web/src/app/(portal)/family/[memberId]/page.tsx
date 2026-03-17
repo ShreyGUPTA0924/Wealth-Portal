@@ -78,7 +78,7 @@ const RELATIONSHIP_STYLES: Record<Relationship, string> = {
   SPOUSE: 'bg-teal-100 text-teal-700',
   CHILD:  'bg-amber-100 text-amber-700',
   PARENT: 'bg-blue-100 text-blue-700',
-  OTHER:  'bg-gray-100 text-gray-600',
+  OTHER:  'bg-border text-foreground-muted',
 };
 
 const ASSET_LABELS: Record<AssetClass, string> = {
@@ -122,7 +122,7 @@ function pnlColor(v: number) { return v >= 0 ? 'text-green-600' : 'text-red-500'
 function pnlBg(v: number)    { return v >= 0 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'; }
 
 function Skeleton({ className }: { className?: string }) {
-  return <div className={`animate-pulse bg-gray-100 rounded-xl ${className ?? ''}`} />;
+  return <div className={`animate-pulse bg-border rounded-xl ${className ?? ''}`} />;
 }
 
 // ─── Minor Schemes ────────────────────────────────────────────────────────────
@@ -156,7 +156,7 @@ const MINOR_SCHEMES = [
 function HoldingsTable({ holdings }: { holdings: Holding[] }) {
   if (holdings.length === 0) {
     return (
-      <div className="py-10 text-center text-gray-400">
+      <div className="py-10 text-center text-foreground-muted">
         <Wallet className="w-8 h-8 mx-auto mb-2 text-gray-200" />
         <p className="text-sm">No holdings yet</p>
       </div>
@@ -167,9 +167,9 @@ function HoldingsTable({ holdings }: { holdings: Holding[] }) {
     <div className="overflow-x-auto -mx-1">
       <table className="w-full text-sm min-w-[600px]">
         <thead>
-          <tr className="border-b border-gray-100">
+          <tr className="border-b border-border">
             {['Asset', 'Type', 'Invested', 'Current Value', 'P&L', 'P&L %'].map((h) => (
-              <th key={h} className="text-left text-xs font-medium text-gray-400 uppercase tracking-wide py-2.5 px-2 first:pl-0">
+              <th key={h} className="text-left text-xs font-medium text-foreground-muted uppercase tracking-wide py-2.5 px-2 first:pl-0">
                 {h}
               </th>
             ))}
@@ -177,20 +177,20 @@ function HoldingsTable({ holdings }: { holdings: Holding[] }) {
         </thead>
         <tbody className="divide-y divide-gray-50">
           {holdings.map((h) => (
-            <tr key={h.id} className="hover:bg-gray-50 transition-colors">
+            <tr key={h.id} className="hover:bg-border/50 transition-colors">
               <td className="py-3 px-2 pl-0">
                 <div>
-                  <p className="text-sm font-medium text-gray-900 truncate max-w-[140px]">{h.name}</p>
-                  {h.symbol && <p className="text-xs text-gray-400">{h.symbol}</p>}
+                  <p className="text-sm font-medium text-foreground truncate max-w-[140px]">{h.name}</p>
+                  {h.symbol && <p className="text-xs text-foreground-muted">{h.symbol}</p>}
                 </div>
               </td>
               <td className="py-3 px-2">
-                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${ASSET_COLORS[h.assetClass] ?? 'bg-gray-100 text-gray-600'}`}>
+                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${ASSET_COLORS[h.assetClass] ?? 'bg-border text-foreground-muted'}`}>
                   {ASSET_LABELS[h.assetClass] ?? h.assetClass}
                 </span>
               </td>
-              <td className="py-3 px-2 text-sm text-gray-700">{formatInr(h.totalInvested, true)}</td>
-              <td className="py-3 px-2 text-sm font-medium text-gray-900">{formatInr(h.currentValue, true)}</td>
+              <td className="py-3 px-2 text-sm text-foreground">{formatInr(h.totalInvested, true)}</td>
+              <td className="py-3 px-2 text-sm font-medium text-foreground">{formatInr(h.currentValue, true)}</td>
               <td className={`py-3 px-2 text-sm font-medium ${pnlColor(h.pnlAbsolute)}`}>
                 {formatInr(h.pnlAbsolute, true)}
               </td>
@@ -211,40 +211,40 @@ function HoldingsTable({ holdings }: { holdings: Holding[] }) {
 
 function GoalsSection({ goals, memberName }: { goals: Goal[]; memberName: string }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-5">
+    <div className="bg-background-card rounded-2xl border border-border p-5">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+        <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
           <Target className="w-4 h-4 text-[#3C3489]" />
           Goals
         </h3>
       </div>
 
       {goals.length === 0 ? (
-        <div className="py-6 text-center text-gray-400">
+        <div className="py-6 text-center text-foreground-muted">
           <Target className="w-8 h-8 mx-auto mb-2 text-gray-200" />
           <p className="text-sm mb-1">No goals yet</p>
-          <p className="text-xs text-gray-400">Add goals for {memberName} to track their progress</p>
+          <p className="text-xs text-foreground-muted">Add goals for {memberName} to track their progress</p>
         </div>
       ) : (
         <div className="space-y-4">
           {goals.map((g) => (
             <div key={g.id}>
               <div className="flex items-center justify-between mb-1.5">
-                <p className="text-sm font-medium text-gray-800 truncate mr-2">{g.name}</p>
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${HEALTH_STYLES[g.healthStatus] ?? 'bg-gray-100 text-gray-600'}`}>
+                <p className="text-sm font-medium text-foreground truncate mr-2">{g.name}</p>
+                <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${HEALTH_STYLES[g.healthStatus] ?? 'bg-border text-foreground-muted'}`}>
                   {g.healthStatus.replace('_', ' ')}
                 </span>
               </div>
               <div className="flex items-center gap-3">
-                <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                <div className="flex-1 h-2 bg-border rounded-full overflow-hidden">
                   <div
                     className="h-full bg-[#3C3489] rounded-full transition-all duration-500"
                     style={{ width: `${Math.min(g.progressPercent, 100)}%` }}
                   />
                 </div>
-                <span className="text-xs font-medium text-gray-500 shrink-0">{g.progressPercent.toFixed(0)}%</span>
+                <span className="text-xs font-medium text-foreground-muted shrink-0">{g.progressPercent.toFixed(0)}%</span>
               </div>
-              <div className="flex justify-between text-xs text-gray-400 mt-1">
+              <div className="flex justify-between text-xs text-foreground-muted mt-1">
                 <span>{formatInr(g.currentAmount, true)}</span>
                 <span>Target: {formatInr(g.targetAmount, true)}</span>
               </div>
@@ -263,27 +263,27 @@ function AllowanceTracker({ monthlyAllowance }: { monthlyAllowance: number }) {
   const currentMonth = new Date().toLocaleString('en-IN', { month: 'short' });
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-5">
-      <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2 mb-4">
+    <div className="bg-background-card rounded-2xl border border-border p-5">
+      <h3 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-4">
         <Calendar className="w-4 h-4 text-amber-500" />
         Allowance Tracker
       </h3>
       <div className="flex items-center justify-between mb-4">
         <div>
-          <p className="text-xs text-gray-400">Monthly Allowance</p>
-          <p className="text-xl font-bold text-gray-900">{formatInr(monthlyAllowance)}</p>
+          <p className="text-xs text-foreground-muted">Monthly Allowance</p>
+          <p className="text-xl font-bold text-foreground">{formatInr(monthlyAllowance)}</p>
         </div>
         <span className="text-xs px-2.5 py-1 rounded-full bg-green-100 text-green-700 font-medium">
           This month: Paid
         </span>
       </div>
       <div>
-        <p className="text-xs text-gray-400 mb-2">Last 6 months</p>
+        <p className="text-xs text-foreground-muted mb-2">Last 6 months</p>
         <div className="flex gap-2">
           {months.map((m) => (
             <div key={m} className="flex-1 flex flex-col items-center gap-1">
               <div className={`w-full h-8 rounded-lg ${m === currentMonth ? 'bg-[#3C3489]' : 'bg-green-100'}`} />
-              <span className="text-[10px] text-gray-400">{m}</span>
+              <span className="text-[10px] text-foreground-muted">{m}</span>
             </div>
           ))}
         </div>
@@ -325,7 +325,7 @@ export default function MemberPortfolioPage() {
 
   if (error || !data) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 text-gray-400">
+      <div className="flex flex-col items-center justify-center py-24 text-foreground-muted">
         <AlertCircle className="w-10 h-10 mb-3 text-red-400" />
         <p className="text-sm mb-3">Failed to load member portfolio</p>
         <button
@@ -354,7 +354,7 @@ export default function MemberPortfolioPage() {
       <div>
         <Link
           href="/family"
-          className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-4 transition-colors"
+          className="inline-flex items-center gap-1.5 text-sm text-foreground-muted hover:text-foreground mb-4 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" /> Back to Family Vault
         </Link>
@@ -366,7 +366,7 @@ export default function MemberPortfolioPage() {
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-xl font-bold text-gray-900">{member.fullName}</h1>
+                <h1 className="text-xl font-bold text-foreground">{member.fullName}</h1>
                 {isMinor && (
                   <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 uppercase tracking-wide">
                     Minor
@@ -378,7 +378,7 @@ export default function MemberPortfolioPage() {
                   {member.relationship}
                 </span>
                 {member.age !== null && (
-                  <span className="text-xs text-gray-400">{member.age} years old</span>
+                  <span className="text-xs text-foreground-muted">{member.age} years old</span>
                 )}
               </div>
             </div>
@@ -402,18 +402,18 @@ export default function MemberPortfolioPage() {
       {/* Portfolio Summary */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: 'Total Invested', value: formatInr(portfolio.totalInvested, true), color: 'text-gray-900' },
-          { label: 'Current Value',  value: formatInr(portfolio.currentValue,  true), color: 'text-gray-900' },
+          { label: 'Total Invested', value: formatInr(portfolio.totalInvested, true), color: 'text-foreground' },
+          { label: 'Current Value',  value: formatInr(portfolio.currentValue,  true), color: 'text-foreground' },
           {
             label: 'P&L',
             value: formatInr(portfolio.pnlAbsolute, true),
             sub: `${portfolio.pnlPercent >= 0 ? '+' : ''}${portfolio.pnlPercent.toFixed(2)}%`,
             color: pnlColor(portfolio.pnlAbsolute),
           },
-          { label: 'Holdings', value: `${portfolio.holdings.length} assets`, color: 'text-gray-900' },
+          { label: 'Holdings', value: `${portfolio.holdings.length} assets`, color: 'text-foreground' },
         ].map((s, i) => (
-          <div key={i} className="bg-white rounded-2xl border border-gray-100 p-4">
-            <p className="text-xs text-gray-400">{s.label}</p>
+          <div key={i} className="bg-background-card rounded-2xl border border-border p-4">
+            <p className="text-xs text-foreground-muted">{s.label}</p>
             <p className={`text-lg font-bold mt-1 ${s.color}`}>{s.value}</p>
             {'sub' in s && s.sub && <p className={`text-xs mt-0.5 font-medium ${s.color}`}>{s.sub}</p>}
           </div>
@@ -431,14 +431,14 @@ export default function MemberPortfolioPage() {
       </div>
 
       {/* Holdings */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-5">
+      <div className="bg-background-card rounded-2xl border border-border p-5">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
             <Shield className="w-4 h-4 text-[#3C3489]" />
             Holdings
           </h3>
           {isMinor && (
-            <span className="flex items-center gap-1.5 text-xs text-gray-400">
+            <span className="flex items-center gap-1.5 text-xs text-foreground-muted">
               <Lock className="w-3.5 h-3.5" /> Read-only
             </span>
           )}
@@ -448,11 +448,11 @@ export default function MemberPortfolioPage() {
 
       {/* Minor Schemes (only for minors) */}
       {isMinor && (
-        <div className="bg-white rounded-2xl border border-gray-100 p-5">
-          <h3 className="text-sm font-semibold text-gray-900 mb-1">
+        <div className="bg-background-card rounded-2xl border border-border p-5">
+          <h3 className="text-sm font-semibold text-foreground mb-1">
             Schemes for {member.fullName}
           </h3>
-          <p className="text-xs text-gray-400 mb-4">Government-backed schemes designed for minors</p>
+          <p className="text-xs text-foreground-muted mb-4">Government-backed schemes designed for minors</p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {MINOR_SCHEMES.map((s) => (
               <div
@@ -462,8 +462,8 @@ export default function MemberPortfolioPage() {
                 <div className="flex items-start gap-3">
                   <span className="text-2xl">{s.icon}</span>
                   <div>
-                    <p className="text-sm font-semibold text-gray-900">{s.name}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{s.desc}</p>
+                    <p className="text-sm font-semibold text-foreground">{s.name}</p>
+                    <p className="text-xs text-foreground-muted mt-0.5">{s.desc}</p>
                     <span className="inline-block mt-2 text-xs font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded-full">
                       {s.returnLabel}
                     </span>

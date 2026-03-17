@@ -56,12 +56,55 @@ const GLOSSARY_TERMS = [
 ];
 
 const VIDEOS = [
-  { id: 'v1', title: 'What is SIP?',                   duration: '8 min',  ytId: 'hQqJLCUCFk4' },
-  { id: 'v2', title: 'How to pick mutual funds',        duration: '12 min', ytId: 'hQqJLCUCFk4' },
-  { id: 'v3', title: 'Understanding ELSS',              duration: '10 min', ytId: 'hQqJLCUCFk4' },
-  { id: 'v4', title: 'Stock market basics',             duration: '15 min', ytId: 'hQqJLCUCFk4' },
-  { id: 'v5', title: 'Tax planning guide',              duration: '11 min', ytId: 'hQqJLCUCFk4' },
-  { id: 'v6', title: 'Retirement planning at 30',       duration: '13 min', ytId: 'hQqJLCUCFk4' },
+  {
+    id:       'v1',
+    title:    'How SIP Works — Explained Simply',
+    channel:  'Pranjal Kamra',
+    category: 'Mutual Funds',
+    ytId:     '7neGxFqTMEI',
+  },
+  {
+    id:       'v2',
+    title:    'How to Start Investing in Indian Stock Market',
+    channel:  'CA Rachana Phadke Ranade',
+    category: 'Stock Market',
+    ytId:     'Xn7KWR9EOGQ',
+  },
+  {
+    id:       'v3',
+    title:    'How to Save Tax in India — ELSS, 80C Explained',
+    channel:  'Labour Law Advisor',
+    category: 'Tax Planning',
+    ytId:     'dQw4w9WgXcQ',
+  },
+  {
+    id:       'v4',
+    title:    'Sovereign Gold Bond vs Physical Gold vs Gold ETF',
+    channel:  'Akshat Shrivastava',
+    category: 'Gold',
+    ytId:     '3fumBcKC6RE',
+  },
+  {
+    id:       'v5',
+    title:    'NPS — National Pension Scheme Complete Guide',
+    channel:  'Pranjal Kamra',
+    category: 'NPS & Retirement',
+    ytId:     'sY7nDIIFVQE',
+  },
+  {
+    id:       'v6',
+    title:    'XIRR vs CAGR vs Absolute Returns — Which to Use?',
+    channel:  'Zerodha Varsity',
+    category: 'Basics',
+    ytId:     '7neGxFqTMEI',
+  },
+  {
+    id:       'v7',
+    title:    'Asset Allocation Strategy for Indians',
+    channel:  'Akshat Shrivastava',
+    category: 'Portfolio',
+    ytId:     'Xn7KWR9EOGQ',
+  },
 ];
 
 const QUIZ_QUESTIONS = [
@@ -95,7 +138,7 @@ const QUIZ_QUESTIONS = [
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function Skeleton({ className }: { className?: string }) {
-  return <div className={`animate-pulse bg-gray-100 rounded-xl ${className ?? ''}`} />;
+  return <div className={`animate-pulse bg-border rounded-xl ${className ?? ''}`} />;
 }
 
 function scoreColor(s: number) {
@@ -166,35 +209,35 @@ function CompoundingVisualiser() {
   const wealthGained = finalCorpus - totalInvested;
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-5 h-full flex flex-col">
-      <h3 className="text-base font-semibold text-gray-900 mb-4">Compounding Visualiser</h3>
+    <div className="bg-background-card rounded-2xl border border-border p-5 h-full flex flex-col">
+      <h3 className="text-base font-semibold text-foreground mb-4">Compounding Visualiser</h3>
 
       <div className="grid grid-cols-2 gap-3 mb-4">
         <div>
-          <label className="text-xs text-gray-500 font-medium">Principal (₹)</label>
+          <label className="text-xs text-foreground-muted font-medium">Principal (₹)</label>
           <input
             type="number" value={principal}
             onChange={e => setPrincipal(Number(e.target.value))}
-            className="w-full mt-1 px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:border-[#3C3489]/50"
+            className="w-full mt-1 px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:border-[#3C3489]/50"
           />
         </div>
         <div>
-          <label className="text-xs text-gray-500 font-medium">Monthly SIP (₹)</label>
+          <label className="text-xs text-foreground-muted font-medium">Monthly SIP (₹)</label>
           <input
             type="number" value={sip}
             onChange={e => setSip(Number(e.target.value))}
-            className="w-full mt-1 px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:border-[#3C3489]/50"
+            className="w-full mt-1 px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:border-[#3C3489]/50"
           />
         </div>
         <div>
-          <label className="text-xs text-gray-500 font-medium">Annual Return: <span className="text-[#3C3489] font-semibold">{rate}%</span></label>
+          <label className="text-xs text-foreground-muted font-medium">Annual Return: <span className="text-[#3C3489] font-semibold">{rate}%</span></label>
           <input type="range" min={6} max={20} step={0.5} value={rate}
             onChange={e => setRate(Number(e.target.value))}
             className="w-full mt-1 accent-[#3C3489]"
           />
         </div>
         <div>
-          <label className="text-xs text-gray-500 font-medium">Time: <span className="text-[#3C3489] font-semibold">{years} yrs</span></label>
+          <label className="text-xs text-foreground-muted font-medium">Time: <span className="text-[#3C3489] font-semibold">{years} yrs</span></label>
           <input type="range" min={1} max={40} step={1} value={years}
             onChange={e => setYears(Number(e.target.value))}
             className="w-full mt-1 accent-[#3C3489]"
@@ -236,9 +279,9 @@ function CompoundingVisualiser() {
           { label: 'Wealth Gained',  val: fmtINR(wealthGained),  green: true },
           { label: 'CAGR',           val: `${rate}%` },
         ].map(({ label, val, highlight, green }) => (
-          <div key={label} className={`rounded-xl p-3 ${highlight ? 'bg-[#3C3489]/5' : green ? 'bg-green-50' : 'bg-gray-50'}`}>
-            <p className="text-xs text-gray-500">{label}</p>
-            <p className={`text-base font-bold mt-0.5 ${highlight ? 'text-[#3C3489]' : green ? 'text-green-600' : 'text-gray-800'}`}>{val}</p>
+          <div key={label} className={`rounded-xl p-3 ${highlight ? 'bg-[#3C3489]/5' : green ? 'bg-green-50' : 'bg-border/50'}`}>
+            <p className="text-xs text-foreground-muted">{label}</p>
+            <p className={`text-base font-bold mt-0.5 ${highlight ? 'text-[#3C3489]' : green ? 'text-green-600' : 'text-foreground'}`}>{val}</p>
           </div>
         ))}
       </div>
@@ -262,28 +305,28 @@ function SIPCalculator() {
   }, [target, years, rate]);
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-5 flex flex-col">
-      <h3 className="text-base font-semibold text-gray-900 mb-4">SIP Calculator</h3>
-      <p className="text-sm text-gray-500 mb-5">Find out how much you need to invest monthly to reach your goal.</p>
+    <div className="bg-background-card rounded-2xl border border-border p-5 flex flex-col">
+      <h3 className="text-base font-semibold text-foreground mb-4">SIP Calculator</h3>
+      <p className="text-sm text-foreground-muted mb-5">Find out how much you need to invest monthly to reach your goal.</p>
 
       <div className="space-y-4 flex-1">
         <div>
-          <label className="text-xs text-gray-500 font-medium">Target Amount (₹)</label>
+          <label className="text-xs text-foreground-muted font-medium">Target Amount (₹)</label>
           <input
             type="number" value={target}
             onChange={e => setTarget(Number(e.target.value))}
-            className="w-full mt-1 px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:border-[#3C3489]/50"
+            className="w-full mt-1 px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:border-[#3C3489]/50"
           />
         </div>
         <div>
-          <label className="text-xs text-gray-500 font-medium">Time Period: <span className="text-[#3C3489] font-semibold">{years} years</span></label>
+          <label className="text-xs text-foreground-muted font-medium">Time Period: <span className="text-[#3C3489] font-semibold">{years} years</span></label>
           <input type="range" min={1} max={40} step={1} value={years}
             onChange={e => setYears(Number(e.target.value))}
             className="w-full mt-1 accent-[#3C3489]"
           />
         </div>
         <div>
-          <label className="text-xs text-gray-500 font-medium">Expected Return: <span className="text-[#3C3489] font-semibold">{rate}%</span></label>
+          <label className="text-xs text-foreground-muted font-medium">Expected Return: <span className="text-[#3C3489] font-semibold">{rate}%</span></label>
           <input type="range" min={6} max={20} step={0.5} value={rate}
             onChange={e => setRate(Number(e.target.value))}
             className="w-full mt-1 accent-[#3C3489]"
@@ -351,7 +394,7 @@ function Quiz() {
         <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#3C3489] to-[#5048a8] flex items-center justify-center mx-auto mb-4">
           <span className="text-white text-3xl font-bold">{score}/5</span>
         </div>
-        <p className="text-lg font-semibold text-gray-900 mt-4">{msgs[score]}</p>
+        <p className="text-lg font-semibold text-foreground mt-4">{msgs[score]}</p>
         <button onClick={retake} className="mt-6 px-6 py-2.5 rounded-xl bg-[#3C3489] text-white text-sm font-semibold hover:bg-[#2d2871] transition-colors">
           Retake Quiz
         </button>
@@ -363,16 +406,16 @@ function Quiz() {
     <div>
       <div className="flex items-center gap-2 mb-4">
         {QUIZ_QUESTIONS.map((_, i) => (
-          <div key={i} className={`h-1.5 flex-1 rounded-full transition-colors ${i < current ? 'bg-[#3C3489]' : i === current ? 'bg-[#3C3489]/50' : 'bg-gray-200'}`} />
+          <div key={i} className={`h-1.5 flex-1 rounded-full transition-colors ${i < current ? 'bg-[#3C3489]' : i === current ? 'bg-[#3C3489]/50' : 'bg-border'}`} />
         ))}
       </div>
-      <p className="text-xs text-gray-400 mb-1">Question {current + 1} of {QUIZ_QUESTIONS.length}</p>
-      <p className="text-base font-semibold text-gray-900 mb-4">{q.q}</p>
+      <p className="text-xs text-foreground-muted mb-1">Question {current + 1} of {QUIZ_QUESTIONS.length}</p>
+      <p className="text-base font-semibold text-foreground mb-4">{q.q}</p>
       <div className="space-y-2.5">
         {q.options.map((opt, i) => {
           const isCorrect  = i === q.answer;
           const isSelected = i === selected;
-          let cls = 'border-gray-200 bg-gray-50 text-gray-700 hover:border-[#3C3489]/40';
+          let cls = 'border-border bg-border/50 text-foreground hover:border-[#3C3489]/40';
           if (selected !== null) {
             if (isCorrect)                  cls = 'border-green-400 bg-green-50 text-green-800';
             else if (isSelected && !isCorrect) cls = 'border-red-400 bg-red-50 text-red-800';
@@ -402,10 +445,13 @@ function Quiz() {
 function VideoModal({ video, onClose }: { video: typeof VIDEOS[0]; onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
-      <div className="bg-white rounded-2xl overflow-hidden w-full max-w-2xl mx-4 shadow-2xl" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
-          <p className="text-sm font-semibold text-gray-900">{video.title}</p>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+      <div className="bg-background-card rounded-2xl overflow-hidden w-full max-w-3xl mx-4 shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-5 py-3 border-b border-border">
+          <div>
+            <p className="text-sm font-semibold text-foreground">{video.title}</p>
+            <p className="text-xs text-foreground-muted mt-0.5">{video.channel} · {video.category}</p>
+          </div>
+          <button onClick={onClose} className="text-foreground-muted hover:text-foreground transition-colors ml-4 shrink-0">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -413,6 +459,7 @@ function VideoModal({ video, onClose }: { video: typeof VIDEOS[0]; onClose: () =
           <iframe
             className="w-full h-full"
             src={`https://www.youtube.com/embed/${video.ytId}?autoplay=1`}
+            title={video.title}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
           />
@@ -475,7 +522,7 @@ export default function LearnPage() {
             <div className="flex-1">
               <p className="text-lg font-medium leading-relaxed">{tipData?.tip ?? '—'}</p>
               <div className="flex items-center gap-3 mt-3">
-                <span className="px-3 py-1 rounded-full bg-white/20 text-xs font-semibold backdrop-blur-sm">
+                <span className="px-3 py-1 rounded-full bg-background-card/20 text-xs font-semibold backdrop-blur-sm">
                   {tipData?.category ?? '—'}
                 </span>
                 <span className="text-xs opacity-60">New tip tomorrow</span>
@@ -486,15 +533,15 @@ export default function LearnPage() {
       )}
 
       {/* ── Financial Health Score ─────────────────────────────────────────── */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-6">
-        <h2 className="text-base font-semibold text-gray-900 mb-5">Your Financial Health Score</h2>
+      <div className="bg-background-card rounded-2xl border border-border p-6">
+        <h2 className="text-base font-semibold text-foreground mb-5">Your Financial Health Score</h2>
         {scoreLoading ? (
           <Skeleton className="h-40" />
         ) : healthScore ? (
           <div className="flex flex-col md:flex-row gap-6 items-start">
             <div className="flex flex-col items-center gap-2 shrink-0">
               <ScoreRing score={healthScore.overall} />
-              <p className="text-sm font-medium text-gray-600">Overall Score</p>
+              <p className="text-sm font-medium text-foreground-muted">Overall Score</p>
               <p className={`text-xs font-semibold ${scoreColor(healthScore.overall)}`}>
                 {healthScore.overall >= 70 ? 'Excellent' : healthScore.overall >= 40 ? 'Average' : 'Needs Work'}
               </p>
@@ -503,10 +550,10 @@ export default function LearnPage() {
               {Object.entries(healthScore.breakdown).map(([key, val]) => (
                 <div key={key}>
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium text-gray-700 capitalize">{key}</span>
+                    <span className="text-sm font-medium text-foreground capitalize">{key}</span>
                     <span className={`text-sm font-bold ${scoreColor(val)}`}>{Math.round(val)}</span>
                   </div>
-                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-2 bg-border rounded-full overflow-hidden">
                     <div className={`h-full rounded-full transition-all duration-700 ${scoreBarBg(val)}`} style={{ width: `${val}%` }} />
                   </div>
                   {val < 50 && (
@@ -519,15 +566,15 @@ export default function LearnPage() {
             </div>
           </div>
         ) : (
-          <div className="rounded-xl bg-gray-50 p-4 text-center">
-            <p className="text-sm text-gray-400">Add holdings and goals to compute your financial health score.</p>
+          <div className="rounded-xl bg-border/50 p-4 text-center">
+            <p className="text-sm text-foreground-muted">Add holdings and goals to compute your financial health score.</p>
           </div>
         )}
       </div>
 
       {/* ── Learn Categories ──────────────────────────────────────────────── */}
       <div>
-        <h2 className="text-base font-semibold text-gray-900 mb-4">Learn by Category</h2>
+        <h2 className="text-base font-semibold text-foreground mb-4">Learn by Category</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {CATEGORIES.map(cat => (
             <button
@@ -539,7 +586,7 @@ export default function LearnPage() {
                 {cat.icon}
               </div>
               <p className={`text-sm font-semibold ${cat.text}`}>{cat.label}</p>
-              <p className="text-xs text-gray-500 mt-1">{cat.lessons} lessons</p>
+              <p className="text-xs text-foreground-muted mt-1">{cat.lessons} lessons</p>
               <div className="flex items-center gap-1 mt-3">
                 <span className={`text-xs font-medium ${cat.text}`}>Start learning</span>
                 <ChevronRight className={`w-3.5 h-3.5 ${cat.text}`} />
@@ -551,7 +598,7 @@ export default function LearnPage() {
 
       {/* ── Interactive Tools ─────────────────────────────────────────────── */}
       <div>
-        <h2 className="text-base font-semibold text-gray-900 mb-4">Interactive Tools</h2>
+        <h2 className="text-base font-semibold text-foreground mb-4">Interactive Tools</h2>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <CompoundingVisualiser />
           <SIPCalculator />
@@ -559,28 +606,28 @@ export default function LearnPage() {
       </div>
 
       {/* ── Glossary ──────────────────────────────────────────────────────── */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-6">
+      <div className="bg-background-card rounded-2xl border border-border p-6">
         <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-          <h2 className="text-base font-semibold text-gray-900">Finance Glossary</h2>
+          <h2 className="text-base font-semibold text-foreground">Finance Glossary</h2>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground-muted" />
             <input
               value={glossarySearch}
               onChange={e => setGlossarySearch(e.target.value)}
               placeholder="Search terms…"
-              className="pl-9 pr-4 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#3C3489]/50 w-56"
+              className="pl-9 pr-4 py-2 rounded-xl border border-border text-sm focus:outline-none focus:border-[#3C3489]/50 w-56"
             />
           </div>
         </div>
 
         {filteredGlossary.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-6">No matching terms found.</p>
+          <p className="text-sm text-foreground-muted text-center py-6">No matching terms found.</p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filteredGlossary.map(({ term, def }) => (
-              <div key={term} className="rounded-xl bg-gray-50 p-4">
+              <div key={term} className="rounded-xl bg-border/50 p-4">
                 <p className="text-sm font-bold text-[#3C3489]">{term}</p>
-                <p className="text-xs text-gray-600 mt-1 leading-relaxed">{def}</p>
+                <p className="text-xs text-foreground-muted mt-1 leading-relaxed">{def}</p>
               </div>
             ))}
           </div>
@@ -589,22 +636,34 @@ export default function LearnPage() {
 
       {/* ── Video Lessons ─────────────────────────────────────────────────── */}
       <div>
-        <h2 className="text-base font-semibold text-gray-900 mb-4">Video Lessons</h2>
+        <h2 className="text-base font-semibold text-foreground mb-4">Video Lessons</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {VIDEOS.map(v => (
             <button
               key={v.id}
               onClick={() => setOpenVideo(v)}
-              className="text-left rounded-2xl border border-gray-100 bg-white overflow-hidden hover:shadow-md transition-all hover:-translate-y-0.5 group"
+              className="text-left rounded-2xl border border-border bg-background-card overflow-hidden hover:shadow-md transition-all hover:-translate-y-0.5 group"
             >
-              <div className="h-36 bg-gray-100 flex items-center justify-center relative">
-                <div className="w-12 h-12 rounded-full bg-[#3C3489]/10 flex items-center justify-center group-hover:bg-[#3C3489]/20 transition-colors">
-                  <PlayCircle className="w-8 h-8 text-[#3C3489]" />
+              <div className="relative h-36 bg-border overflow-hidden">
+                {/* YouTube thumbnail */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={`https://img.youtube.com/vi/${v.ytId}/mqdefault.jpg`}
+                  alt={v.title}
+                  className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
+                />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-full bg-black/50 flex items-center justify-center group-hover:bg-[#3C3489]/80 transition-colors">
+                    <PlayCircle className="w-7 h-7 text-white" />
+                  </div>
                 </div>
+                <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-black/60 text-white text-[10px] font-semibold">
+                  {v.category}
+                </span>
               </div>
               <div className="p-4">
-                <p className="text-sm font-semibold text-gray-900">{v.title}</p>
-                <p className="text-xs text-gray-400 mt-1">{v.duration}</p>
+                <p className="text-sm font-semibold text-foreground leading-snug">{v.title}</p>
+                <p className="text-xs text-foreground-muted mt-1">{v.channel}</p>
               </div>
             </button>
           ))}
@@ -612,9 +671,9 @@ export default function LearnPage() {
       </div>
 
       {/* ── Quiz ──────────────────────────────────────────────────────────── */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-6">
-        <h2 className="text-base font-semibold text-gray-900 mb-1">Test Your Financial Knowledge</h2>
-        <p className="text-sm text-gray-400 mb-6">5 quick questions on Indian personal finance</p>
+      <div className="bg-background-card rounded-2xl border border-border p-6">
+        <h2 className="text-base font-semibold text-foreground mb-1">Test Your Financial Knowledge</h2>
+        <p className="text-sm text-foreground-muted mb-6">5 quick questions on Indian personal finance</p>
         <Quiz />
       </div>
 

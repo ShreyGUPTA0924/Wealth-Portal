@@ -44,7 +44,7 @@ const CATEGORIES = [
   { value: 'TRAVEL',     label: 'Travel',     icon: Plane,         color: 'text-amber-600',   bg: 'bg-amber-100',  border: 'border-amber-200' },
   { value: 'EMERGENCY',  label: 'Emergency',  icon: Shield,        color: 'text-red-600',     bg: 'bg-red-100',    border: 'border-red-200' },
   { value: 'WEDDING',    label: 'Wedding',    icon: Heart,         color: 'text-pink-600',    bg: 'bg-pink-100',   border: 'border-pink-200' },
-  { value: 'CUSTOM',     label: 'Custom',     icon: Target,        color: 'text-gray-600',    bg: 'bg-gray-100',   border: 'border-gray-200' },
+  { value: 'CUSTOM',     label: 'Custom',     icon: Target,        color: 'text-foreground-muted',    bg: 'bg-border',   border: 'border-border' },
 ];
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -96,20 +96,20 @@ export default function NewGoalPage() {
   if (created) {
     return (
       <div className="max-w-lg mx-auto">
-        <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center">
+        <div className="bg-background-card rounded-2xl border border-border p-10 text-center">
           <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
             <Check className="w-8 h-8 text-green-600" />
           </div>
-          <h2 className="text-xl font-bold text-gray-900 mb-1">Goal Created!</h2>
-          <p className="text-sm text-gray-500 mb-6">{created.name}</p>
+          <h2 className="text-xl font-bold text-foreground mb-1">Goal Created!</h2>
+          <p className="text-sm text-foreground-muted mb-6">{created.name}</p>
 
           {created.recommendedMonthlySip != null && (
             <div className="bg-[#3C3489]/5 border border-[#3C3489]/10 rounded-2xl p-5 mb-6 text-left">
-              <p className="text-xs text-gray-500 font-medium mb-1">Recommended Monthly SIP</p>
+              <p className="text-xs text-foreground-muted font-medium mb-1">Recommended Monthly SIP</p>
               <p className="text-2xl font-bold text-[#3C3489]">
                 {formatInr(created.recommendedMonthlySip)}
               </p>
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs text-foreground-muted mt-1">
                 Invest this amount monthly at 12% p.a. to reach your goal
               </p>
             </div>
@@ -118,7 +118,7 @@ export default function NewGoalPage() {
           <div className="flex gap-3">
             <button
               onClick={() => router.push('/goals')}
-              className="flex-1 text-sm font-medium text-gray-600 border border-gray-200 rounded-xl py-2.5 hover:bg-gray-50 transition-colors"
+              className="flex-1 text-sm font-medium text-foreground-muted border border-border rounded-xl py-2.5 hover:bg-border/50 transition-colors"
             >
               View All Goals
             </button>
@@ -139,19 +139,19 @@ export default function NewGoalPage() {
       {/* Back link */}
       <button
         onClick={() => router.back()}
-        className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+        className="flex items-center gap-2 text-sm text-foreground-muted hover:text-foreground transition-colors"
       >
         <ArrowLeft className="w-4 h-4" /> Back to Goals
       </button>
 
-      <div className="bg-white rounded-2xl border border-gray-100 p-6 md:p-8">
-        <h2 className="text-xl font-bold text-gray-900 mb-1">Create a New Goal</h2>
-        <p className="text-sm text-gray-400 mb-7">Set a financial target and we'll recommend a monthly SIP plan.</p>
+      <div className="bg-background-card rounded-2xl border border-border p-6 md:p-8">
+        <h2 className="text-xl font-bold text-foreground mb-1">Create a New Goal</h2>
+        <p className="text-sm text-foreground-muted mb-7">Set a financial target and we'll recommend a monthly SIP plan.</p>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Category selector */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-3">
+            <label className="block text-sm font-semibold text-foreground mb-3">
               Choose a Category <span className="text-red-400">*</span>
             </label>
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
@@ -168,14 +168,14 @@ export default function NewGoalPage() {
                     }}
                     className={`flex flex-col items-center gap-2 p-3 rounded-2xl border-2 transition-all text-center
                       ${selected
-                        ? `${cat.bg} ${cat.border} shadow-sm`
-                        : 'border-gray-100 hover:border-gray-200 hover:bg-gray-50'
+                        ? `${cat.bg} ${cat.border} shadow-sm shadow-black/5`
+                        : 'border-border hover:border-border hover:bg-border/50'
                       }`}
                   >
-                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${selected ? cat.bg : 'bg-gray-100'}`}>
-                      <Icon className={`w-5 h-5 ${selected ? cat.color : 'text-gray-400'}`} />
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${selected ? cat.bg : 'bg-border'}`}>
+                      <Icon className={`w-5 h-5 ${selected ? cat.color : 'text-foreground-muted'}`} />
                     </div>
-                    <span className={`text-xs font-medium ${selected ? cat.color : 'text-gray-500'}`}>
+                    <span className={`text-xs font-medium ${selected ? cat.color : 'text-foreground-muted'}`}>
                       {cat.label}
                     </span>
                     {selected && (
@@ -191,7 +191,7 @@ export default function NewGoalPage() {
 
           {/* Goal name */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-foreground mb-2">
               Goal Name <span className="text-red-400">*</span>
             </label>
             <input
@@ -199,29 +199,29 @@ export default function NewGoalPage() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder={selectedCat ? `e.g. ${selectedCat.label} Fund` : 'e.g. Retirement Fund'}
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#3C3489]/30 focus:border-[#3C3489] transition-colors"
+              className="w-full px-4 py-3 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#3C3489]/30 focus:border-[#3C3489] transition-colors"
             />
           </div>
 
           {/* Target amount */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-foreground mb-2">
               Target Amount (₹) <span className="text-red-400">*</span>
             </label>
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">₹</span>
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground-muted text-sm font-medium">₹</span>
               <input
                 type="number"
                 value={targetAmount}
                 onChange={(e) => setTargetAmount(e.target.value)}
                 placeholder="0"
                 min="1"
-                step="1000"
-                className="w-full pl-8 pr-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#3C3489]/30 focus:border-[#3C3489] transition-colors"
+                step="any"
+                className="w-full pl-8 pr-4 py-3 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#3C3489]/30 focus:border-[#3C3489] transition-colors"
               />
             </div>
             {targetAmount && parseFloat(targetAmount) > 0 && (
-              <p className="text-xs text-gray-400 mt-1.5">
+              <p className="text-xs text-foreground-muted mt-1.5">
                 = {formatInr(parseFloat(targetAmount))}
               </p>
             )}
@@ -229,7 +229,7 @@ export default function NewGoalPage() {
 
           {/* Target date */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-foreground mb-2">
               Target Date <span className="text-red-400">*</span>
             </label>
             <input
@@ -237,7 +237,7 @@ export default function NewGoalPage() {
               value={targetDate}
               onChange={(e) => setTargetDate(e.target.value)}
               min={minDateStr}
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#3C3489]/30 focus:border-[#3C3489] transition-colors"
+              className="w-full px-4 py-3 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#3C3489]/30 focus:border-[#3C3489] transition-colors"
             />
           </div>
 

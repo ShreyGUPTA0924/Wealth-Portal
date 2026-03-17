@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import {
   TrendingUp, TrendingDown, Plus, ChevronUp, ChevronDown,
@@ -58,7 +59,7 @@ function formatInr(n: number | null | undefined): string {
 }
 
 function RiskPill({ score }: { score: number | null }) {
-  if (score == null) return <span className="text-gray-400">—</span>;
+  if (score == null) return <span className="text-foreground-muted">—</span>;
   const color = score <= 4 ? 'bg-green-100 text-green-700'
               : score <= 6 ? 'bg-yellow-100 text-yellow-700'
               : 'bg-red-100 text-red-700';
@@ -70,7 +71,7 @@ function RiskPill({ score }: { score: number | null }) {
 }
 
 function PnlBadge({ value, isPercent }: { value: number | null; isPercent?: boolean }) {
-  if (value == null) return <span className="text-gray-400">—</span>;
+  if (value == null) return <span className="text-foreground-muted">—</span>;
   const positive = value >= 0;
   return (
     <span className={`inline-flex items-center gap-0.5 text-sm font-medium ${positive ? 'text-green-600' : 'text-red-500'}`}>
@@ -94,7 +95,7 @@ function SkeletonRow() {
     <tr className="border-b border-gray-50">
       {[...Array(8)].map((_, i) => (
         <td key={i} className="px-4 py-3.5">
-          <div className="h-4 bg-gray-100 rounded animate-pulse" style={{ width: `${60 + Math.random() * 40}%` }} />
+          <div className="h-4 bg-border rounded animate-pulse" style={{ width: `${60 + Math.random() * 40}%` }} />
         </td>
       ))}
     </tr>
@@ -104,6 +105,7 @@ function SkeletonRow() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function PortfolioPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState('');
   const [sortKey,   setSortKey]   = useState<SortKey>('currentValue');
   const [sortDir,   setSortDir]   = useState<'asc' | 'desc'>('desc');
@@ -121,16 +123,17 @@ export default function PortfolioPage() {
       apiClient
         .get<{ success: boolean; data: Holding[] }>(
           '/api/holdings',
-          { params: activeTab ? { assetClass: activeTab } : {} }
+          // 'OTHERS' is a UI-only filter — fetch all and filter client-side
+          { params: activeTab && activeTab !== 'OTHERS' ? { assetClass: activeTab } : {} }
         )
         .then((r) => r.data.data),
   });
 
-  // Filter "Others" tab client-side
-  const KNOWN = ['STOCK', 'MUTUAL_FUND', 'FD', 'GOLD', 'CRYPTO'];
+  // Asset classes that have their own dedicated tab — everything else → "Others"
+  const TABBED = new Set(['STOCK', 'MUTUAL_FUND', 'FD', 'GOLD', 'CRYPTO']);
   const holdings = holdingsData
     ? activeTab === 'OTHERS'
-      ? holdingsData.filter((h) => !KNOWN.includes(h.assetClass))
+      ? holdingsData.filter((h) => !TABBED.has(h.assetClass))
       : holdingsData
     : [];
 
@@ -159,9 +162,9 @@ export default function PortfolioPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {summaryLoading
           ? [...Array(4)].map((_, i) => (
-              <div key={i} className="bg-white rounded-2xl p-4 border border-gray-100 animate-pulse">
-                <div className="h-3 w-24 bg-gray-100 rounded mb-3" />
-                <div className="h-6 w-32 bg-gray-100 rounded" />
+              <div key={i} className="bg-background-card rounded-2xl p-4 border border-border animate-pulse">
+                <div className="h-3 w-24 bg-border rounded mb-3" />
+                <div className="h-6 w-32 bg-border rounded" />
               </div>
             ))
           : (
@@ -186,14 +189,14 @@ export default function PortfolioPage() {
       </div>
 
       {/* ── Holdings table ── */}
-      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+      <div className="bg-background-card rounded-2xl border border-border overflow-hidden">
         {/* Header row */}
         <div className="flex items-center justify-between px-5 pt-5 pb-0">
-          <h2 className="text-base font-semibold text-gray-900">Holdings</h2>
+          <h2 className="text-base font-semibold text-foreground">Holdings</h2>
           <div className="flex items-center gap-2">
             <button
               onClick={() => refetch()}
-              className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-[#3C3489] transition-colors px-2.5 py-1.5 rounded-lg hover:bg-[#3C3489]/5"
+              className="flex items-center gap-1.5 text-xs text-foreground-muted hover:text-[#3C3489] transition-colors px-2.5 py-1.5 rounded-lg hover:bg-[#3C3489]/5"
             >
               <RefreshCw className="w-3.5 h-3.5" /> Refresh
             </button>
@@ -215,7 +218,7 @@ export default function PortfolioPage() {
               className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors
                           ${activeTab === tab.value
                             ? 'bg-[#3C3489] text-white'
-                            : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'}`}
+                            : 'text-foreground-muted hover:bg-border/50 hover:text-foreground'}`}
             >
               {tab.label}
             </button>
@@ -225,7 +228,7 @@ export default function PortfolioPage() {
         {/* Table */}
         <div className="overflow-x-auto mt-3">
           {error ? (
-            <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+            <div className="flex flex-col items-center justify-center py-16 text-foreground-muted">
               <AlertCircle className="w-8 h-8 mb-3 text-red-400" />
               <p className="text-sm">Failed to load holdings</p>
               <button onClick={() => refetch()} className="mt-3 text-xs text-[#3C3489] hover:underline">
@@ -235,7 +238,7 @@ export default function PortfolioPage() {
           ) : (
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-100">
+                <tr className="border-b border-border">
                   {([
                     ['name',         'Name'],
                     ['currentValue', 'Current Value'],
@@ -249,7 +252,7 @@ export default function PortfolioPage() {
                     <th
                       key={key}
                       onClick={() => toggleSort(key)}
-                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 cursor-pointer select-none hover:text-gray-700 whitespace-nowrap"
+                      className="px-4 py-3 text-left text-xs font-medium text-foreground-muted cursor-pointer select-none hover:text-foreground whitespace-nowrap"
                     >
                       <div className="flex items-center gap-1">
                         {label}
@@ -266,9 +269,9 @@ export default function PortfolioPage() {
                     ? (
                       <tr>
                         <td colSpan={8} className="py-16 text-center">
-                          <div className="flex flex-col items-center gap-3 text-gray-400">
+                          <div className="flex flex-col items-center gap-3 text-foreground-muted">
                             <Wallet className="w-10 h-10 text-gray-200" />
-                            <p className="text-sm font-medium text-gray-500">No holdings yet</p>
+                            <p className="text-sm font-medium text-foreground-muted">No holdings yet</p>
                             <Link
                               href="/portfolio/add"
                               className="text-xs font-semibold text-white bg-[#3C3489] hover:bg-[#2d2871] px-4 py-2 rounded-lg transition-colors"
@@ -280,22 +283,23 @@ export default function PortfolioPage() {
                       </tr>
                     )
                     : sorted.map((h) => (
-                      <Link key={h.id} href={`/portfolio/${h.id}`} legacyBehavior>
                         <tr
-                          className="border-b border-gray-50 hover:bg-gray-50/60 cursor-pointer transition-colors"
+                          key={h.id}
+                          onClick={() => router.push(`/portfolio/${h.id}`)}
+                          className="border-b border-gray-50 hover:bg-border/50 cursor-pointer transition-colors"
                         >
                           <td className="px-4 py-3.5">
                             <div>
-                              <p className="font-medium text-gray-900 leading-tight">{h.name}</p>
-                              <p className="text-xs text-gray-400 mt-0.5">
+                              <p className="font-medium text-foreground leading-tight">{h.name}</p>
+                              <p className="text-xs text-foreground-muted mt-0.5">
                                 {h.symbol ?? h.assetClass} · {h.quantity.toLocaleString('en-IN')} units
                               </p>
                             </div>
                           </td>
-                          <td className="px-4 py-3.5 font-medium text-gray-800">
+                          <td className="px-4 py-3.5 font-medium text-foreground">
                             {formatInr(h.currentValue)}
                           </td>
-                          <td className="px-4 py-3.5 text-gray-600">
+                          <td className="px-4 py-3.5 text-foreground-muted">
                             {formatInr(h.totalInvested)}
                           </td>
                           <td className="px-4 py-3.5">
@@ -304,17 +308,16 @@ export default function PortfolioPage() {
                           <td className="px-4 py-3.5">
                             <PnlBadge value={h.pnlPercent} isPercent />
                           </td>
-                          <td className="px-4 py-3.5 text-gray-600">
+                          <td className="px-4 py-3.5 text-foreground-muted">
                             {h.xirr != null ? `${h.xirr.toFixed(1)}%` : '—'}
                           </td>
                           <td className="px-4 py-3.5">
                             <RiskPill score={h.riskScore} />
                           </td>
-                          <td className="px-4 py-3.5 text-gray-600">
+                          <td className="px-4 py-3.5 text-foreground-muted">
                             {h.weight.toFixed(1)}%
                           </td>
                         </tr>
-                      </Link>
                     ))
                 }
               </tbody>
@@ -338,11 +341,11 @@ function SummaryCard({
 }) {
   const textColor = colored
     ? positive ? 'text-green-600' : 'text-red-500'
-    : 'text-gray-900';
+    : 'text-foreground';
 
   return (
-    <div className="bg-white rounded-2xl p-4 border border-gray-100">
-      <p className="text-xs text-gray-500 font-medium">{label}</p>
+    <div className="bg-background-card rounded-2xl p-4 border border-border">
+      <p className="text-xs text-foreground-muted font-medium">{label}</p>
       <p className={`text-xl font-bold mt-1 ${textColor}`}>{value}</p>
     </div>
   );

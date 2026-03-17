@@ -4,7 +4,8 @@ import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  ReferenceLine,
 } from 'recharts';
 import {
   ChevronLeft, TrendingUp, TrendingDown, Plus, Pencil,
@@ -65,7 +66,7 @@ function formatDate(iso: string): string {
 }
 
 function RiskPill({ score }: { score: number | null }) {
-  if (score == null) return <span className="text-gray-400">—</span>;
+  if (score == null) return <span className="text-foreground-muted">—</span>;
   const color = score <= 4 ? 'bg-green-100 text-green-700'
               : score <= 6 ? 'bg-yellow-100 text-yellow-700'
               : 'bg-red-100 text-red-700';
@@ -77,8 +78,8 @@ function RiskPill({ score }: { score: number | null }) {
 }
 
 const inputClass =
-  'block w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 ' +
-  'placeholder-gray-400 bg-white focus:outline-none focus:ring-2 focus:ring-[#3C3489]/20 focus:border-[#3C3489]';
+  'block w-full px-3.5 py-2.5 border border-border rounded-xl text-sm text-foreground ' +
+  'placeholder-gray-400 bg-background-card focus:outline-none focus:ring-2 focus:ring-[#3C3489]/20 focus:border-[#3C3489]';
 
 const PERIOD_OPTIONS = ['1M', '3M', '6M', '1Y', 'MAX'];
 const TXN_TYPES = ['BUY', 'SELL', 'DIVIDEND', 'SIP'];
@@ -139,16 +140,21 @@ export default function HoldingDetailPage({
 
   const priceable = holding && PRICEABLE_CLASSES.includes(holding.assetClass);
 
-  const { data: history } = useQuery<HistoryPoint[]>({
-    queryKey: ['price-history', holding?.symbol, holding?.assetClass, period],
-    enabled:  !!holding?.symbol && !!priceable,
+  // For Gold/SGB there is no ticker symbol stored — use the literal "GOLD" identifier
+  const chartSymbol = holding
+    ? (['GOLD', 'SGB'].includes(holding.assetClass) ? 'GOLD' : holding.symbol)
+    : undefined;
+
+  const { data: history, isLoading: historyLoading } = useQuery<HistoryPoint[]>({
+    queryKey: ['price-history', chartSymbol, holding?.assetClass, period],
+    enabled:  !!chartSymbol && !!priceable,
     queryFn:  () =>
       apiClient
-        .get<{ success: boolean; data: HistoryPoint[] }>(
-          `/api/market/history/${holding!.symbol}`,
+        .get<{ success: boolean; data: { points: HistoryPoint[] } }>(
+          `/api/market/history/${chartSymbol}`,
           { params: { assetClass: holding!.assetClass, period } }
         )
-        .then((r) => r.data.data),
+        .then((r) => r.data.data.points ?? []),
   });
 
   // Mutations
@@ -205,7 +211,7 @@ export default function HoldingDetailPage({
 
   if (error || !holding) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 text-gray-400 gap-3">
+      <div className="flex flex-col items-center justify-center h-64 text-foreground-muted gap-3">
         <AlertCircle className="w-8 h-8 text-red-400" />
         <p className="text-sm">Holding not found or failed to load</p>
         <button onClick={() => router.back()} className="text-xs text-[#3C3489] hover:underline">
@@ -222,26 +228,26 @@ export default function HoldingDetailPage({
       {/* Back */}
       <button
         onClick={() => router.back()}
-        className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-[#3C3489] transition-colors"
+        className="flex items-center gap-1.5 text-sm text-foreground-muted hover:text-[#3C3489] transition-colors"
       >
         <ChevronLeft className="w-4 h-4" /> Back to Portfolio
       </button>
 
       {/* ── Header ── */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-5">
+      <div className="bg-background-card rounded-2xl border border-border p-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-xl font-bold text-gray-900">{holding.name}</h1>
+              <h1 className="text-xl font-bold text-foreground">{holding.name}</h1>
               {holding.symbol && (
-                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-medium">
+                <span className="text-xs bg-border text-foreground-muted px-2 py-0.5 rounded-full font-medium">
                   {holding.symbol}
                 </span>
               )}
               <RiskPill score={holding.riskScore} />
             </div>
             <div className="flex items-center gap-3 mt-2 flex-wrap">
-              <span className="text-2xl font-bold text-gray-900">
+              <span className="text-2xl font-bold text-foreground">
                 {formatInr(holding.currentPrice)}
               </span>
               {holding.pnlPercent != null && (
@@ -255,7 +261,7 @@ export default function HoldingDetailPage({
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowEditForm(true)}
-              className="flex items-center gap-1.5 text-xs font-medium text-gray-600 hover:text-[#3C3489] border border-gray-200 hover:border-[#3C3489] px-3 py-1.5 rounded-lg transition-all"
+              className="flex items-center gap-1.5 text-xs font-medium text-foreground-muted hover:text-[#3C3489] border border-border hover:border-[#3C3489] px-3 py-1.5 rounded-lg transition-all"
             >
               <Pencil className="w-3.5 h-3.5" /> Edit
             </button>
@@ -279,77 +285,135 @@ export default function HoldingDetailPage({
           { label: 'Qty',           value: holding.quantity.toLocaleString('en-IN') },
           { label: 'Weight',        value: `${holding.weight.toFixed(1)}%` },
         ]).map(({ label, value, color }) => (
-          <div key={label} className="bg-white rounded-2xl border border-gray-100 p-3.5">
-            <p className="text-xs text-gray-500 font-medium">{label}</p>
-            <p className={`text-base font-semibold mt-0.5 ${color ?? 'text-gray-900'}`}>{value}</p>
+          <div key={label} className="bg-background-card rounded-2xl border border-border p-3.5">
+            <p className="text-xs text-foreground-muted font-medium">{label}</p>
+            <p className={`text-base font-semibold mt-0.5 ${color ?? 'text-foreground'}`}>{value}</p>
           </div>
         ))}
       </div>
 
       {/* ── Price chart ── */}
-      {priceable && holding.symbol && (
-        <div className="bg-white rounded-2xl border border-gray-100 p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-gray-900">Price History</h2>
+      {priceable && (
+        <div className="bg-background-card rounded-2xl border border-border p-5">
+          <div className="flex items-center justify-between mb-1">
+            <div>
+              <h2 className="text-sm font-semibold text-foreground">Price History</h2>
+              <p className="text-xs text-foreground-muted mt-0.5">
+                Dashed line = your avg buy price ({formatInr(holding.avgBuyPrice)})
+              </p>
+            </div>
             <div className="flex gap-1">
               {PERIOD_OPTIONS.map((p) => (
                 <button
                   key={p}
                   onClick={() => setPeriod(p)}
                   className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors
-                              ${period === p ? 'bg-[#3C3489] text-white' : 'text-gray-500 hover:bg-gray-50'}`}
+                              ${period === p ? 'bg-[#3C3489] text-white' : 'text-foreground-muted hover:bg-border/50'}`}
                 >
                   {p}
                 </button>
               ))}
             </div>
           </div>
-          {history && history.length > 0 ? (
-            <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={history}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                <XAxis
-                  dataKey="date"
-                  tick={{ fontSize: 10, fill: '#9ca3af' }}
-                  tickFormatter={(v: string) =>
-                    new Date(v).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })
-                  }
-                />
-                <YAxis
-                  tick={{ fontSize: 10, fill: '#9ca3af' }}
-                  tickFormatter={(v: number) => `₹${v.toLocaleString('en-IN')}`}
-                  width={70}
-                />
-                <Tooltip
-                  formatter={tooltipValueFormatter}
-                  labelFormatter={tooltipLabelFormatter}
-                  contentStyle={{
-                    borderRadius: '12px', border: '1px solid #e5e7eb',
-                    fontSize: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                  }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="price"
-                  stroke="#3C3489"
-                  strokeWidth={2}
-                  dot={false}
-                  activeDot={{ r: 4, fill: '#3C3489' }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="h-48 flex items-center justify-center text-gray-300 text-sm">
-              No chart data available
+
+          {/* Legend */}
+          <div className="flex items-center gap-4 mb-4 mt-2">
+            <span className="flex items-center gap-1.5 text-xs text-foreground-muted">
+              <span className="w-5 h-0.5 rounded" style={{ background: pnlPositive ? '#16a34a' : '#ef4444' }} />
+              Market Price
+            </span>
+            <span className="flex items-center gap-1.5 text-xs text-foreground-muted">
+              <span className="w-5 h-0 border-t-2 border-dashed border-amber-500" />
+              Avg Buy Price
+            </span>
+          </div>
+
+          {historyLoading ? (
+            <div className="h-56 flex items-center justify-center">
+              <div className="w-6 h-6 border-2 border-[#3C3489] border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : history && history.length > 0 ? (() => {
+            const chartColor  = pnlPositive ? '#16a34a' : '#ef4444';
+            const gradientId  = `grad-${holdingId}`;
+            const yMin = Math.min(...history.map((h) => h.price), holding.avgBuyPrice) * 0.97;
+            const yMax = Math.max(...history.map((h) => h.price), holding.avgBuyPrice) * 1.03;
+
+            return (
+              <ResponsiveContainer width="100%" height={220}>
+                <AreaChart data={history} margin={{ top: 4, right: 4, bottom: 0, left: 4 }}>
+                  <defs>
+                    <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%"  stopColor={chartColor} stopOpacity={0.18} />
+                      <stop offset="95%" stopColor={chartColor} stopOpacity={0}    />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(156,163,175,0.15)" />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fontSize: 10, fill: '#9ca3af' }}
+                    tickLine={false}
+                    axisLine={false}
+                    minTickGap={40}
+                    tickFormatter={(v: string) =>
+                      new Date(v).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })
+                    }
+                  />
+                  <YAxis
+                    domain={[yMin, yMax]}
+                    tick={{ fontSize: 10, fill: '#9ca3af' }}
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(v: number) =>
+                      v >= 1_00_000
+                        ? `₹${(v / 1_00_000).toFixed(1)}L`
+                        : v >= 1_000
+                          ? `₹${(v / 1_000).toFixed(1)}K`
+                          : `₹${v.toFixed(0)}`
+                    }
+                    width={62}
+                  />
+                  <Tooltip
+                    formatter={tooltipValueFormatter}
+                    labelFormatter={tooltipLabelFormatter}
+                    contentStyle={{
+                      borderRadius: '12px', border: '1px solid rgba(156,163,175,0.3)',
+                      fontSize: '12px', boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+                      background: 'var(--color-background-card)',
+                      color: 'var(--color-foreground)',
+                    }}
+                  />
+                  {/* Avg buy price reference line */}
+                  <ReferenceLine
+                    y={holding.avgBuyPrice}
+                    stroke="#f59e0b"
+                    strokeDasharray="6 3"
+                    strokeWidth={1.5}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="price"
+                    stroke={chartColor}
+                    strokeWidth={2}
+                    fill={`url(#${gradientId})`}
+                    dot={false}
+                    activeDot={{ r: 4, fill: chartColor, strokeWidth: 0 }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            );
+          })() : (
+            <div className="h-56 flex flex-col items-center justify-center gap-2 text-foreground-muted">
+              <p className="text-sm">No chart data available for this period</p>
+              <p className="text-xs opacity-60">Try a different time range</p>
             </div>
           )}
         </div>
       )}
 
       {/* ── Transactions ── */}
-      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+      <div className="bg-background-card rounded-2xl border border-border overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
-          <h2 className="text-sm font-semibold text-gray-900">Transactions</h2>
+          <h2 className="text-sm font-semibold text-foreground">Transactions</h2>
           <button
             onClick={() => { setShowTxnForm(true); setTxnError(''); }}
             className="flex items-center gap-1.5 text-xs font-semibold text-white bg-[#3C3489] hover:bg-[#2d2871] px-3 py-1.5 rounded-lg transition-colors"
@@ -359,24 +423,24 @@ export default function HoldingDetailPage({
         </div>
 
         {showTxnForm && (
-          <div className="px-5 py-4 bg-gray-50/60 border-b border-gray-100">
+          <div className="px-5 py-4 bg-border/50/60 border-b border-border">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1.5">Type</label>
+                <label className="block text-xs font-medium text-foreground-muted mb-1.5">Type</label>
                 <select value={txnType} onChange={(e) => setTxnType(e.target.value)} className={inputClass}>
                   {TXN_TYPES.map((t) => <option key={t}>{t}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1.5">Quantity</label>
+                <label className="block text-xs font-medium text-foreground-muted mb-1.5">Quantity</label>
                 <input type="number" step="any" value={txnQty} onChange={(e) => setTxnQty(e.target.value)} className={inputClass} placeholder="0" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1.5">Price/Unit (₹)</label>
+                <label className="block text-xs font-medium text-foreground-muted mb-1.5">Price/Unit (₹)</label>
                 <input type="number" step="any" value={txnPrice} onChange={(e) => setTxnPrice(e.target.value)} className={inputClass} placeholder="0" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1.5">Date</label>
+                <label className="block text-xs font-medium text-foreground-muted mb-1.5">Date</label>
                 <input type="date" value={txnDate} onChange={(e) => setTxnDate(e.target.value)} className={inputClass} />
               </div>
             </div>
@@ -391,7 +455,7 @@ export default function HoldingDetailPage({
                 {addTxnMutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 <CheckCircle className="w-3.5 h-3.5" /> Save
               </button>
-              <button onClick={() => setShowTxnForm(false)} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 px-3 py-2 rounded-lg">
+              <button onClick={() => setShowTxnForm(false)} className="flex items-center gap-1.5 text-xs text-foreground-muted hover:text-foreground px-3 py-2 rounded-lg">
                 <X className="w-3.5 h-3.5" /> Cancel
               </button>
             </div>
@@ -403,18 +467,18 @@ export default function HoldingDetailPage({
             <thead>
               <tr className="border-b border-gray-50">
                 {['Date', 'Type', 'Qty', 'Price/Unit', 'Amount', 'Notes'].map((h) => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 whitespace-nowrap">{h}</th>
+                  <th key={h} className="px-4 py-3 text-left text-xs font-medium text-foreground-muted whitespace-nowrap">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {holding.transactions.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-10 text-center text-sm text-gray-400">No transactions yet</td>
+                  <td colSpan={6} className="py-10 text-center text-sm text-foreground-muted">No transactions yet</td>
                 </tr>
               ) : holding.transactions.map((t) => (
-                <tr key={t.id} className="border-b border-gray-50 hover:bg-gray-50/50">
-                  <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{formatDate(t.transactionDate)}</td>
+                <tr key={t.id} className="border-b border-gray-50 hover:bg-border/50/50">
+                  <td className="px-4 py-3 text-foreground-muted whitespace-nowrap">{formatDate(t.transactionDate)}</td>
                   <td className="px-4 py-3">
                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full
                       ${t.type === 'BUY' || t.type === 'SIP' ? 'bg-blue-50 text-blue-700'
@@ -423,10 +487,10 @@ export default function HoldingDetailPage({
                       {t.type}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-gray-800">{t.quantity.toLocaleString('en-IN')}</td>
-                  <td className="px-4 py-3 text-gray-600">{formatInr(t.pricePerUnit)}</td>
-                  <td className="px-4 py-3 font-medium text-gray-900">{formatInr(t.totalAmount)}</td>
-                  <td className="px-4 py-3 text-gray-400 text-xs">{t.notes ?? '—'}</td>
+                  <td className="px-4 py-3 text-foreground">{t.quantity.toLocaleString('en-IN')}</td>
+                  <td className="px-4 py-3 text-foreground-muted">{formatInr(t.pricePerUnit)}</td>
+                  <td className="px-4 py-3 font-medium text-foreground">{formatInr(t.totalAmount)}</td>
+                  <td className="px-4 py-3 text-foreground-muted text-xs">{t.notes ?? '—'}</td>
                 </tr>
               ))}
             </tbody>
@@ -436,12 +500,12 @@ export default function HoldingDetailPage({
 
       {/* ── Linked goals ── */}
       {holding.linkedGoals.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-100 p-5">
-          <h2 className="text-sm font-semibold text-gray-900 mb-3">Linked Goals</h2>
+        <div className="bg-background-card rounded-2xl border border-border p-5">
+          <h2 className="text-sm font-semibold text-foreground mb-3">Linked Goals</h2>
           <div className="space-y-2">
             {holding.linkedGoals.map((g) => (
-              <div key={g.goalId} className="flex items-center justify-between py-2.5 px-3 rounded-xl bg-gray-50">
-                <span className="text-sm text-gray-800">{g.name}</span>
+              <div key={g.goalId} className="flex items-center justify-between py-2.5 px-3 rounded-xl bg-border/50">
+                <span className="text-sm text-foreground">{g.name}</span>
                 <span className="text-xs font-medium text-[#3C3489]">{g.allocationPercent.toFixed(1)}%</span>
               </div>
             ))}
@@ -452,15 +516,15 @@ export default function HoldingDetailPage({
       {/* ── Edit modal ── */}
       {showEditForm && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
-            <h3 className="text-base font-semibold text-gray-900 mb-4">Edit Holding</h3>
+          <div className="bg-background-card rounded-2xl p-6 w-full max-w-md shadow-xl">
+            <h3 className="text-base font-semibold text-foreground mb-4">Edit Holding</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Manual Price (₹)</label>
+                <label className="block text-sm font-medium text-foreground mb-1.5">Manual Price (₹)</label>
                 <input type="number" step="any" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} className={inputClass} placeholder="Leave blank to keep current" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Notes</label>
+                <label className="block text-sm font-medium text-foreground mb-1.5">Notes</label>
                 <input value={editNotes} onChange={(e) => setEditNotes(e.target.value)} className={inputClass} />
               </div>
               {editError && <p className="text-xs text-red-500">{editError}</p>}
@@ -474,7 +538,7 @@ export default function HoldingDetailPage({
                 {editMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
                 Save Changes
               </button>
-              <button onClick={() => setShowEditForm(false)} className="px-4 py-2.5 rounded-xl text-sm font-medium text-gray-600 border border-gray-200 hover:bg-gray-50">
+              <button onClick={() => setShowEditForm(false)} className="px-4 py-2.5 rounded-xl text-sm font-medium text-foreground-muted border border-border hover:bg-border/50">
                 Cancel
               </button>
             </div>
@@ -485,9 +549,9 @@ export default function HoldingDetailPage({
       {/* ── Delete confirm ── */}
       {showConfirmDelete && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
-            <h3 className="text-base font-semibold text-gray-900">Delete Holding?</h3>
-            <p className="text-sm text-gray-500 mt-2">
+          <div className="bg-background-card rounded-2xl p-6 w-full max-w-sm shadow-xl">
+            <h3 className="text-base font-semibold text-foreground">Delete Holding?</h3>
+            <p className="text-sm text-foreground-muted mt-2">
               This will soft-delete <strong>{holding.name}</strong> and update your portfolio.
             </p>
             <div className="flex gap-2 mt-5">
@@ -499,7 +563,7 @@ export default function HoldingDetailPage({
                 {deleteMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
                 Yes, Delete
               </button>
-              <button onClick={() => setShowConfirmDelete(false)} className="px-4 py-2.5 rounded-xl text-sm font-medium text-gray-600 border border-gray-200 hover:bg-gray-50">
+              <button onClick={() => setShowConfirmDelete(false)} className="px-4 py-2.5 rounded-xl text-sm font-medium text-foreground-muted border border-border hover:bg-border/50">
                 Cancel
               </button>
             </div>

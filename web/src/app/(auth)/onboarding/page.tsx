@@ -98,12 +98,48 @@ const GOAL_CATEGORIES = [
 
 const RELATIONSHIPS = ['SPOUSE', 'CHILD', 'PARENT', 'OTHER'];
 
+import React from 'react';
+import { MotionWrapper, MotionItem } from '@/components/ui/MotionWrapper';
+
 // ─── Reusable styled input ────────────────────────────────────────────────────
 
-const inputClass =
-  'block w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm text-gray-900 ' +
-  'placeholder-gray-400 bg-white transition-colors ' +
-  'focus:outline-none focus:ring-2 focus:ring-[#3C3489]/30 focus:border-[#3C3489]';
+const FloatingInput = React.forwardRef<
+  HTMLInputElement,
+  {
+    label: string;
+    error?: string;
+    rightElement?: React.ReactNode;
+  } & React.InputHTMLAttributes<HTMLInputElement>
+>(({ label, error, rightElement, id, className, ...props }, ref) => {
+  const inputId = id || label.replace(/\s+/g, '-').toLowerCase();
+  
+  return (
+    <div className="space-y-1 w-full">
+      <div className="relative group w-full">
+        <input
+          ref={ref}
+          id={inputId}
+          placeholder=" "
+          className={`peer block w-full px-4 pt-5 pb-2 border border-border rounded-xl text-sm text-foreground placeholder-transparent bg-background-card/60 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:border-[#6366f1] focus:ring-0 focus:shadow-[0_0_20px_rgba(99,102,241,0.2)] hover:border-foreground-muted ${className || ''}`}
+          {...props}
+        />
+        <label
+          htmlFor={inputId}
+          className="absolute left-4 top-3.5 text-sm font-medium text-foreground-muted transition-all duration-300 pointer-events-none peer-placeholder-shown:top-4 peer-placeholder-shown:text-sm peer-focus:top-1.5 peer-focus:text-[10px] peer-focus:text-[#6366f1] peer-[:not(:placeholder-shown)]:top-1.5 peer-[:not(:placeholder-shown)]:text-[10px]"
+        >
+          {label}
+        </label>
+        {rightElement && (
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center">
+            {rightElement}
+          </div>
+        )}
+      </div>
+      {error && <p className="text-xs text-red-500 pl-1">{error}</p>}
+    </div>
+  );
+});
+FloatingInput.displayName = 'FloatingInput';
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -227,10 +263,10 @@ export default function OnboardingPage() {
             <div
               className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
                 step > s.id
-                  ? 'bg-[#3C3489] text-white'
+                  ? 'bg-premium-gradient text-white shadow-md shadow-[#6366f1]/20'
                   : step === s.id
-                  ? 'bg-[#3C3489] text-white ring-4 ring-[#3C3489]/20'
-                  : 'bg-gray-100 text-gray-400'
+                  ? 'bg-premium-gradient text-white ring-4 ring-[#6366f1]/20 shadow-md shadow-[#6366f1]/20'
+                  : 'bg-border text-foreground-muted'
               }`}
             >
               {step > s.id ? <Check className="w-4 h-4" /> : s.id}
@@ -238,7 +274,7 @@ export default function OnboardingPage() {
             {i < STEPS.length - 1 && (
               <div
                 className={`h-0.5 w-8 sm:w-12 mx-1 transition-all ${
-                  step > s.id ? 'bg-[#3C3489]' : 'bg-gray-200'
+                  step > s.id ? 'bg-[#6366f1]' : 'bg-border'
                 }`}
               />
             )}
@@ -249,7 +285,7 @@ export default function OnboardingPage() {
         {STEPS.map((s) => (
           <span
             key={s.id}
-            className={`w-8 text-center ${step === s.id ? 'text-[#3C3489] font-medium' : ''}`}
+            className={`w-8 text-center ${step === s.id ? 'text-[#6366f1] font-medium' : ''}`}
           >
             {s.title}
           </span>
@@ -283,7 +319,7 @@ export default function OnboardingPage() {
             type="button"
             onClick={back}
             className="flex items-center gap-1 px-4 py-2.5 rounded-xl text-sm font-medium
-                       text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors"
+                       text-foreground-muted bg-border hover:bg-border/80 transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
             Back
@@ -293,10 +329,10 @@ export default function OnboardingPage() {
           type="button"
           onClick={onNext}
           disabled={isSaving}
-          className="flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold text-white
-                     bg-[#3C3489] hover:bg-[#2d2871] active:scale-[0.98]
+          className="flex-1 py-3 px-4 rounded-xl text-sm font-bold text-white
+                     bg-gradient-stripe shadow-md hover:shadow-lg hover:-translate-y-0.5 active:scale-95
                      disabled:opacity-60 disabled:cursor-not-allowed
-                     transition-all duration-150 flex items-center justify-center gap-2"
+                     transition-all duration-300 flex items-center justify-center gap-2"
         >
           {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
           {nextLabel}
@@ -307,7 +343,7 @@ export default function OnboardingPage() {
         <button
           type="button"
           onClick={() => { setApiError(''); onSkip(); }}
-          className="w-full text-sm text-gray-400 hover:text-[#3C3489] transition-colors py-1"
+          className="w-full text-sm text-foreground-muted hover:text-[#6366f1] transition-colors py-1"
         >
           {skipLabel}
         </button>
@@ -323,356 +359,354 @@ export default function OnboardingPage() {
       // ── Step 1: Profile ──────────────────────────────────────────────────
       case 1:
         return (
-          <>
-            <div className="mb-6">
-              <h2 className="text-xl font-bold text-gray-900">Tell us about yourself</h2>
-              <p className="text-sm text-gray-500 mt-1">This helps personalise your experience</p>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Full name *</label>
-                <input
+          <MotionWrapper key="step-1" className="w-full">
+            <MotionItem>
+              <div className="mb-6">
+                <h2 className="text-xl font-bold text-foreground">Tell us about yourself</h2>
+                <p className="text-sm text-foreground-muted mt-1">This helps personalise your experience</p>
+              </div>
+              <div className="space-y-4">
+                <FloatingInput
+                  label="Full name *"
                   type="text"
                   value={profile.fullName}
                   onChange={(e) => setProfile({ ...profile, fullName: e.target.value })}
                   placeholder="Arjun Sharma"
-                  className={inputClass}
                 />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Date of birth</label>
-                <input
+                
+                <FloatingInput
+                  label="Date of birth"
                   type="date"
                   value={profile.dateOfBirth}
                   onChange={(e) => setProfile({ ...profile, dateOfBirth: e.target.value })}
                   max={new Date().toISOString().split('T')[0]}
-                  className={inputClass}
+                  className="pt-6 pb-1"
                 />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">City</label>
-                <input
+                
+                <FloatingInput
+                  label="City"
                   type="text"
                   value={profile.city}
                   onChange={(e) => setProfile({ ...profile, city: e.target.value })}
                   placeholder="Mumbai, Delhi, Bangalore…"
-                  className={inputClass}
                 />
               </div>
-            </div>
-            <NavButtons onNext={saveProfile} />
-          </>
+              <NavButtons onNext={saveProfile} />
+            </MotionItem>
+          </MotionWrapper>
         );
 
       // ── Step 2: Risk quiz ────────────────────────────────────────────────
       case 2:
         return (
-          <>
-            <div className="mb-6">
-              <h2 className="text-xl font-bold text-gray-900">Your risk profile</h2>
-              <p className="text-sm text-gray-500 mt-1">
-                Answer 5 quick questions — we&apos;ll suggest the right asset mix for you
-              </p>
-            </div>
-
-            {quizResult ? (
-              /* Result card */
-              <div className="bg-[#ede9f5] rounded-2xl p-6 text-center">
-                <div className="text-4xl mb-2">
-                  {quizResult.profile === 'CONSERVATIVE' ? '🛡️' : quizResult.profile === 'MODERATE' ? '⚖️' : '🚀'}
-                </div>
-                <h3 className="text-xl font-bold text-[#3C3489]">{quizResult.label} investor</h3>
-                <p className="text-sm text-gray-600 mt-2 leading-relaxed">{quizResult.description}</p>
-                <p className="text-xs text-gray-400 mt-3">Risk score: {quizResult.score} / 20</p>
-                <button
-                  onClick={() => setQuizResult(null)}
-                  className="mt-4 text-xs text-[#3C3489] hover:underline"
-                >
-                  Retake quiz
-                </button>
+          <MotionWrapper key="step-2" className="w-full">
+            <MotionItem>
+              <div className="mb-6">
+                <h2 className="text-xl font-bold text-foreground">Your risk profile</h2>
+                <p className="text-sm text-foreground-muted mt-1">
+                  Answer 5 quick questions — we&apos;ll suggest the right asset mix for you
+                </p>
               </div>
-            ) : (
-              /* Quiz questions */
-              <div className="space-y-6">
-                {QUIZ.map((q, qi) => (
-                  <div key={qi}>
-                    <p className="text-sm font-medium text-gray-800 mb-2.5">
-                      <span className="text-[#3C3489] font-bold">Q{qi + 1}. </span>
-                      {q.q}
-                    </p>
-                    <div className="space-y-2">
-                      {q.options.map((opt, oi) => (
-                        <button
-                          key={oi}
-                          type="button"
-                          onClick={() => {
-                            const ans = [...quizAnswers];
-                            ans[qi] = oi;
-                            setQuizAnswers(ans);
-                          }}
-                          className={`w-full text-left px-4 py-2.5 rounded-xl text-sm border transition-all ${
-                            quizAnswers[qi] === oi
-                              ? 'bg-[#3C3489] text-white border-[#3C3489]'
-                              : 'bg-white text-gray-700 border-gray-200 hover:border-[#3C3489]/40'
-                          }`}
-                        >
-                          {opt}
-                        </button>
-                      ))}
+
+              {quizResult ? (
+                /* Result card */
+                <MotionItem>
+                  <div className="bg-[#6366f1]/10 rounded-2xl p-6 text-center border border-[#6366f1]/20">
+                    <div className="text-4xl mb-2">
+                      {quizResult.profile === 'CONSERVATIVE' ? '🛡️' : quizResult.profile === 'MODERATE' ? '⚖️' : '🚀'}
                     </div>
+                    <h3 className="text-xl font-bold text-[#6366f1]">{quizResult.label} investor</h3>
+                    <p className="text-sm text-foreground-muted mt-2 leading-relaxed">{quizResult.description}</p>
+                    <p className="text-xs text-foreground-muted mt-3">Risk score: {quizResult.score} / 20</p>
+                    <button
+                      onClick={() => setQuizResult(null)}
+                      className="mt-4 text-xs text-[#6366f1] hover:text-[#818cf8]"
+                    >
+                      Retake quiz
+                    </button>
                   </div>
-                ))}
-              </div>
-            )}
+                </MotionItem>
+              ) : (
+                /* Quiz questions */
+                <div className="space-y-6">
+                  {QUIZ.map((q, qi) => (
+                    <div key={qi}>
+                      <p className="text-sm font-medium text-foreground mb-2.5">
+                        <span className="text-transparent bg-clip-text bg-premium-gradient font-bold mr-1">Q{qi + 1}.</span>
+                        {q.q}
+                      </p>
+                      <div className="space-y-2">
+                        {q.options.map((opt, oi) => (
+                          <button
+                            key={oi}
+                            type="button"
+                            onClick={() => {
+                              const ans = [...quizAnswers];
+                              ans[qi] = oi;
+                              setQuizAnswers(ans);
+                            }}
+                            className={`w-full text-left px-4 py-2.5 rounded-xl text-sm border transition-all ${
+                              quizAnswers[qi] === oi
+                                ? 'bg-[#6366f1] text-white border-[#6366f1] shadow-md shadow-[#6366f1]/20'
+                                : 'bg-background-card text-foreground border-border hover:border-[#6366f1]/40 hover:bg-border/50'
+                            }`}
+                          >
+                            {opt}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
 
-            <NavButtons
-              onNext={quizResult ? next : saveRisk}
-              nextLabel={quizResult ? 'Continue' : 'Calculate my risk profile'}
-            />
-          </>
+              <NavButtons
+                onNext={quizResult ? next : saveRisk}
+                nextLabel={quizResult ? 'Continue' : 'Calculate my risk profile'}
+              />
+            </MotionItem>
+          </MotionWrapper>
         );
 
       // ── Step 3: Connect broker ───────────────────────────────────────────
       case 3:
         return (
-          <>
-            <div className="mb-6">
-              <h2 className="text-xl font-bold text-gray-900">Connect your broker</h2>
-              <p className="text-sm text-gray-500 mt-1">
-                Auto-import your holdings — or add them manually later
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              {[
-                { id: 'ZERODHA', name: 'Zerodha', desc: 'India\'s largest broker', color: '#387ed1' },
-                { id: 'UPSTOX', name: 'Upstox', desc: 'Fast & modern trading', color: '#7b2ff7' },
-              ].map((b) => (
-                <button
-                  key={b.id}
-                  type="button"
-                  onClick={() => setBroker(b.id)}
-                  className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all ${
-                    broker === b.id
-                      ? 'border-[#3C3489] bg-[#ede9f5]'
-                      : 'border-gray-200 bg-white hover:border-gray-300'
-                  }`}
-                >
-                  <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm"
-                    style={{ backgroundColor: b.color }}
-                  >
-                    {b.name[0]}
-                  </div>
-                  <div className="text-left">
-                    <p className="text-sm font-semibold text-gray-900">{b.name}</p>
-                    <p className="text-xs text-gray-500">{b.desc}</p>
-                  </div>
-                  {broker === b.id && <Check className="w-5 h-5 text-[#3C3489] ml-auto" />}
-                </button>
-              ))}
-
-              <div className="flex items-center gap-3 py-2">
-                <div className="flex-1 h-px bg-gray-200" />
-                <span className="text-xs text-gray-400">or</span>
-                <div className="flex-1 h-px bg-gray-200" />
+          <MotionWrapper key="step-3" className="w-full">
+            <MotionItem>
+              <div className="mb-6">
+                <h2 className="text-xl font-bold text-foreground">Connect your broker</h2>
+                <p className="text-sm text-foreground-muted mt-1">
+                  Auto-import your holdings — or add them manually later
+                </p>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setBroker('MANUAL')}
-                className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all ${
-                  broker === 'MANUAL'
-                    ? 'border-[#3C3489] bg-[#ede9f5]'
-                    : 'border-dashed border-gray-300 hover:border-gray-400'
-                }`}
-              >
-                <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center">
-                  <Building2 className="w-5 h-5 text-gray-400" />
-                </div>
-                <div className="text-left">
-                  <p className="text-sm font-semibold text-gray-700">Add manually</p>
-                  <p className="text-xs text-gray-500">Enter holdings yourself</p>
-                </div>
-                {broker === 'MANUAL' && <Check className="w-5 h-5 text-[#3C3489] ml-auto" />}
-              </button>
-            </div>
+              <div className="space-y-3">
+                {[
+                  { id: 'ZERODHA', name: 'Zerodha', desc: 'India\'s largest broker', color: '#387ed1' },
+                  { id: 'UPSTOX', name: 'Upstox', desc: 'Fast & modern trading', color: '#7b2ff7' },
+                ].map((b) => (
+                  <button
+                    key={b.id}
+                    type="button"
+                    onClick={() => setBroker(b.id)}
+                    className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all ${
+                      broker === b.id
+                        ? 'border-[#6366f1] bg-[#6366f1]/10'
+                        : 'border-border bg-background-card hover:border-[#6366f1]/40'
+                    }`}
+                  >
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm"
+                      style={{ backgroundColor: b.color }}
+                    >
+                      {b.name[0]}
+                    </div>
+                    <div className="text-left">
+                      <p className="text-sm font-semibold text-foreground">{b.name}</p>
+                      <p className="text-xs text-foreground-muted">{b.desc}</p>
+                    </div>
+                    {broker === b.id && <Check className="w-5 h-5 text-[#6366f1] ml-auto" />}
+                  </button>
+                ))}
 
-            <NavButtons
-              onNext={() => { setApiError(''); next(); }}
-              skipLabel="Skip — I'll connect later"
-              onSkip={next}
-            />
-          </>
+                <div className="flex items-center gap-3 py-2">
+                  <div className="flex-1 h-px bg-border" />
+                  <span className="text-xs text-foreground-muted">or</span>
+                  <div className="flex-1 h-px bg-border" />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setBroker('MANUAL')}
+                  className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all ${
+                    broker === 'MANUAL'
+                      ? 'border-[#6366f1] bg-[#6366f1]/10'
+                      : 'border-dashed border-border hover:border-foreground-muted'
+                  }`}
+                >
+                  <div className="w-10 h-10 rounded-xl bg-border flex items-center justify-center">
+                    <Building2 className="w-5 h-5 text-foreground-muted" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm font-semibold text-foreground">Add manually</p>
+                    <p className="text-xs text-foreground-muted">Enter holdings yourself</p>
+                  </div>
+                  {broker === 'MANUAL' && <Check className="w-5 h-5 text-[#6366f1] ml-auto" />}
+                </button>
+              </div>
+
+              <NavButtons
+                onNext={() => { setApiError(''); next(); }}
+                skipLabel="Skip — I'll connect later"
+                onSkip={next}
+              />
+            </MotionItem>
+          </MotionWrapper>
         );
 
       // ── Step 4: First goal ───────────────────────────────────────────────
       case 4:
         return (
-          <>
-            <div className="mb-6">
-              <h2 className="text-xl font-bold text-gray-900">Set your first goal</h2>
-              <p className="text-sm text-gray-500 mt-1">
-                Goals keep you motivated and help us track your progress
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              {/* Category */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Goal type</label>
-                <div className="grid grid-cols-2 gap-2">
-                  {GOAL_CATEGORIES.map((cat) => (
-                    <button
-                      key={cat.value}
-                      type="button"
-                      onClick={() => setGoal({ ...goal, category: cat.value, name: cat.label.split(' ').slice(1).join(' ') })}
-                      className={`p-3 rounded-xl border text-left transition-all ${
-                        goal.category === cat.value
-                          ? 'border-[#3C3489] bg-[#ede9f5]'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      <p className="text-base">{cat.label.split(' ')[0]}</p>
-                      <p className="text-xs font-medium text-gray-700 mt-0.5">
-                        {cat.label.split(' ').slice(1).join(' ')}
-                      </p>
-                    </button>
-                  ))}
-                </div>
+          <MotionWrapper key="step-4" className="w-full">
+            <MotionItem>
+              <div className="mb-6">
+                <h2 className="text-xl font-bold text-foreground">Set your first goal</h2>
+                <p className="text-sm text-foreground-muted mt-1">
+                  Goals keep you motivated and help us track your progress
+                </p>
               </div>
 
-              {/* Name */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Goal name</label>
-                <input
+              <div className="space-y-4">
+                {/* Category */}
+                <div>
+                  <label className="block text-sm font-medium text-foreground-muted mb-2">Goal type</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {GOAL_CATEGORIES.map((cat) => (
+                      <button
+                        key={cat.value}
+                        type="button"
+                        onClick={() => setGoal({ ...goal, category: cat.value, name: cat.label.split(' ').slice(1).join(' ') })}
+                        className={`p-3 rounded-xl border text-left transition-all ${
+                          goal.category === cat.value
+                            ? 'border-[#6366f1] bg-[#6366f1]/10'
+                            : 'border-border bg-background-card hover:border-[#6366f1]/40 hover:bg-border/50'
+                        }`}
+                      >
+                        <p className="text-base">{cat.label.split(' ')[0]}</p>
+                        <p className="text-xs font-medium text-foreground mt-0.5">
+                          {cat.label.split(' ').slice(1).join(' ')}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Name */}
+                <FloatingInput
+                  label="Goal name"
                   type="text"
                   value={goal.name}
                   onChange={(e) => setGoal({ ...goal, name: e.target.value })}
                   placeholder="e.g. Retirement corpus"
-                  className={inputClass}
                 />
-              </div>
 
-              {/* Amount */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Target amount (₹)</label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">
-                    ₹
-                  </span>
-                  <input
-                    type="number"
-                    value={goal.targetAmount}
-                    onChange={(e) => setGoal({ ...goal, targetAmount: e.target.value })}
-                    placeholder="5000000"
-                    min="1"
-                    className={`${inputClass} pl-8`}
-                  />
-                </div>
-              </div>
+                {/* Amount */}
+                <FloatingInput
+                  label="Target amount (₹)"
+                  type="number"
+                  value={goal.targetAmount}
+                  onChange={(e) => setGoal({ ...goal, targetAmount: e.target.value })}
+                  placeholder="5000000"
+                  min="1"
+                />
 
-              {/* Date */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Target date</label>
-                <input
+                {/* Date */}
+                <FloatingInput
+                  label="Target date"
                   type="date"
                   value={goal.targetDate}
                   onChange={(e) => setGoal({ ...goal, targetDate: e.target.value })}
                   min={new Date().toISOString().split('T')[0]}
-                  className={inputClass}
+                  className="pt-6 pb-1"
                 />
               </div>
-            </div>
 
-            <NavButtons
-              onNext={saveGoal}
-              skipLabel="Skip — I'll add goals later"
-              onSkip={next}
-            />
-          </>
+              <NavButtons
+                onNext={saveGoal}
+                skipLabel="Skip — I'll add goals later"
+                onSkip={next}
+              />
+            </MotionItem>
+          </MotionWrapper>
         );
 
       // ── Step 5: Family ───────────────────────────────────────────────────
       case 5:
         return (
-          <>
-            <div className="mb-6">
-              <h2 className="text-xl font-bold text-gray-900">Add family members</h2>
-              <p className="text-sm text-gray-500 mt-1">
-                Manage your family&apos;s finances together in one place
-              </p>
-            </div>
-
-            {/* Added members list */}
-            {familyMembers.length > 0 && (
-              <div className="mb-4 space-y-2">
-                {familyMembers.map((m, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center justify-between px-4 py-3 bg-[#ede9f5] rounded-xl"
-                  >
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{m.name}</p>
-                      <p className="text-xs text-gray-500 capitalize">{m.relationship.toLowerCase()}</p>
-                    </div>
-                    <button
-                      onClick={() => setFamilyMembers((prev) => prev.filter((_, j) => j !== i))}
-                      className="text-gray-400 hover:text-red-500 transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
+          <MotionWrapper key="step-5" className="w-full">
+            <MotionItem>
+              <div className="mb-6">
+                <h2 className="text-xl font-bold text-foreground">Add family members</h2>
+                <p className="text-sm text-foreground-muted mt-1">
+                  Manage your family&apos;s finances together in one place
+                </p>
               </div>
-            )}
 
-            {/* Add member form */}
-            <div className="space-y-3 bg-gray-50 rounded-2xl p-4 border border-gray-200">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                Add a member
-              </p>
-              <input
-                type="text"
-                value={newMember.name}
-                onChange={(e) => setNewMember({ ...newMember, name: e.target.value })}
-                placeholder="Full name"
-                className={inputClass}
+              {/* Added members list */}
+              {familyMembers.length > 0 && (
+                <div className="mb-4 space-y-2">
+                  {familyMembers.map((m, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center justify-between px-4 py-3 bg-border rounded-xl"
+                    >
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{m.name}</p>
+                        <p className="text-xs text-foreground-muted capitalize">{m.relationship.toLowerCase()}</p>
+                      </div>
+                      <button
+                        onClick={() => setFamilyMembers((prev) => prev.filter((_, j) => j !== i))}
+                        className="text-foreground-muted hover:text-red-500 transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Add member form */}
+              <div className="space-y-3 bg-background-card rounded-2xl p-4 border border-border">
+                <p className="text-xs font-semibold text-foreground-muted uppercase tracking-wide px-1">
+                  Add a member
+                </p>
+                
+                <FloatingInput
+                  label="Full name"
+                  type="text"
+                  value={newMember.name}
+                  onChange={(e) => setNewMember({ ...newMember, name: e.target.value })}
+                  placeholder="Full name"
+                />
+                
+                <div className="relative">
+                  <select
+                    value={newMember.relationship}
+                    onChange={(e) => setNewMember({ ...newMember, relationship: e.target.value })}
+                    className="block w-full px-4 py-3 border border-border rounded-xl text-sm text-foreground bg-background-card/60 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:border-[#6366f1] focus:ring-0 hover:border-foreground-muted appearance-none"
+                  >
+                    {RELATIONSHIPS.map((r) => (
+                      <option key={r} value={r}>
+                        {r.charAt(0) + r.slice(1).toLowerCase()}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!newMember.name.trim()) return;
+                    setFamilyMembers((prev) => [...prev, { ...newMember }]);
+                    setNewMember({ name: '', relationship: 'SPOUSE' });
+                  }}
+                  disabled={!newMember.name.trim()}
+                  className="w-full py-2 px-4 rounded-xl text-sm font-medium
+                             text-[#6366f1] border-2 border-[#6366f1] hover:bg-[#6366f1]/10
+                             disabled:opacity-40 disabled:cursor-not-allowed transition-colors mt-2"
+                >
+                  + Add member
+                </button>
+              </div>
+
+              <NavButtons
+                onNext={completeOnboarding}
+                nextLabel="Complete setup"
+                skipLabel="Skip — I'll add family later"
+                onSkip={completeOnboarding}
               />
-              <select
-                value={newMember.relationship}
-                onChange={(e) => setNewMember({ ...newMember, relationship: e.target.value })}
-                className={inputClass}
-              >
-                {RELATIONSHIPS.map((r) => (
-                  <option key={r} value={r}>
-                    {r.charAt(0) + r.slice(1).toLowerCase()}
-                  </option>
-                ))}
-              </select>
-              <button
-                type="button"
-                onClick={() => {
-                  if (!newMember.name.trim()) return;
-                  setFamilyMembers((prev) => [...prev, { ...newMember }]);
-                  setNewMember({ name: '', relationship: 'SPOUSE' });
-                }}
-                disabled={!newMember.name.trim()}
-                className="w-full py-2 px-4 rounded-xl text-sm font-medium
-                           text-[#3C3489] border-2 border-[#3C3489] hover:bg-[#ede9f5]
-                           disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                + Add member
-              </button>
-            </div>
-
-            <NavButtons
-              onNext={completeOnboarding}
-              nextLabel="Complete setup"
-              skipLabel="Skip — I'll add family later"
-              onSkip={completeOnboarding}
-            />
-          </>
+            </MotionItem>
+          </MotionWrapper>
         );
 
       default:
@@ -684,11 +718,11 @@ export default function OnboardingPage() {
 
   return (
     <div className="w-full max-w-lg">
-      <div className="bg-white rounded-2xl shadow-xl border border-gray-100 px-8 py-10">
+      <div className="bg-background-card rounded-2xl shadow-xl border border-border px-8 py-10 overflow-hidden relative">
         {/* Step header */}
         <div className="flex items-center gap-2 mb-1">
-          <TrendingUp className="w-4 h-4 text-[#3C3489]" />
-          <span className="text-xs font-semibold text-[#3C3489] uppercase tracking-wide">
+          <TrendingUp className="w-4 h-4 text-[#6366f1]" />
+          <span className="text-xs font-semibold text-[#6366f1] uppercase tracking-wide">
             Step {step} of {STEPS.length}
           </span>
         </div>
@@ -699,10 +733,10 @@ export default function OnboardingPage() {
       </div>
 
       {/* Skip all */}
-      <p className="text-center text-xs text-gray-400 mt-4">
+      <p className="text-center text-xs text-foreground-muted mt-4">
         <button
           onClick={() => router.push('/dashboard')}
-          className="hover:text-[#3C3489] transition-colors"
+          className="hover:text-[#6366f1] transition-colors"
         >
           Skip onboarding → Go to dashboard
         </button>

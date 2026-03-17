@@ -83,7 +83,7 @@ const CATEGORY_CONFIG: Record<string, { icon: React.ElementType; color: string; 
   TRAVEL:     { icon: Plane,          color: 'text-amber-600',   bg: 'bg-amber-100' },
   EMERGENCY:  { icon: Shield,         color: 'text-red-600',     bg: 'bg-red-100' },
   WEDDING:    { icon: Heart,          color: 'text-pink-600',    bg: 'bg-pink-100' },
-  CUSTOM:     { icon: Target,         color: 'text-gray-600',    bg: 'bg-gray-100' },
+  CUSTOM:     { icon: Target,         color: 'text-foreground-muted',    bg: 'bg-border' },
 };
 
 const HEALTH_STYLES: Record<string, string> = {
@@ -95,7 +95,7 @@ const HEALTH_STYLES: Record<string, string> = {
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
 function Skeleton({ className }: { className?: string }) {
-  return <div className={`animate-pulse bg-gray-100 rounded-xl ${className ?? ''}`} />;
+  return <div className={`animate-pulse bg-border rounded-xl ${className ?? ''}`} />;
 }
 
 // ─── Simulator ────────────────────────────────────────────────────────────────
@@ -131,14 +131,14 @@ function GoalSimulator({ goal }: { goal: GoalDetail }) {
     : null;
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-6">
-      <h3 className="text-sm font-semibold text-gray-900 mb-1">What-if Simulator</h3>
-      <p className="text-xs text-gray-400 mb-5">Adjust monthly SIP to see projected outcomes</p>
+    <div className="bg-background-card rounded-2xl border border-border p-6">
+      <h3 className="text-sm font-semibold text-foreground mb-1">What-if Simulator</h3>
+      <p className="text-xs text-foreground-muted mb-5">Adjust monthly SIP to see projected outcomes</p>
 
       {/* Slider */}
       <div className="mb-5">
         <div className="flex justify-between items-center mb-2">
-          <label className="text-xs text-gray-500 font-medium">Monthly SIP</label>
+          <label className="text-xs text-foreground-muted font-medium">Monthly SIP</label>
           <span className="text-base font-bold text-[#3C3489]">{formatInr(sipAmount)}</span>
         </div>
         <input
@@ -152,9 +152,9 @@ function GoalSimulator({ goal }: { goal: GoalDetail }) {
             setSipAmount(v);
             runSimulate(v);
           }}
-          className="w-full h-2 bg-gray-200 rounded-full appearance-none cursor-pointer accent-[#3C3489]"
+          className="w-full h-2 bg-border rounded-full appearance-none cursor-pointer accent-[#3C3489]"
         />
-        <div className="flex justify-between text-xs text-gray-400 mt-1">
+        <div className="flex justify-between text-xs text-foreground-muted mt-1">
           <span>₹500</span>
           <span>₹1 L</span>
         </div>
@@ -167,19 +167,19 @@ function GoalSimulator({ goal }: { goal: GoalDetail }) {
         </div>
       ) : result ? (
         <div className="grid grid-cols-2 gap-3">
-          <div className="bg-gray-50 rounded-xl p-4">
-            <p className="text-xs text-gray-400 mb-1">Goal achieved by</p>
-            <p className="text-base font-bold text-gray-900">{completion}</p>
-            <p className="text-xs text-gray-400">{result.monthsToComplete} months</p>
+          <div className="bg-border/50 rounded-xl p-4">
+            <p className="text-xs text-foreground-muted mb-1">Goal achieved by</p>
+            <p className="text-base font-bold text-foreground">{completion}</p>
+            <p className="text-xs text-foreground-muted">{result.monthsToComplete} months</p>
           </div>
           <div className={`rounded-xl p-4 ${result.shortfallOrSurplus >= 0 ? 'bg-green-50' : 'bg-red-50'}`}>
-            <p className="text-xs text-gray-400 mb-1">
+            <p className="text-xs text-foreground-muted mb-1">
               {result.shortfallOrSurplus >= 0 ? 'Surplus at target' : 'Shortfall at target'}
             </p>
             <p className={`text-base font-bold ${result.shortfallOrSurplus >= 0 ? 'text-green-700' : 'text-red-600'}`}>
               {formatInr(Math.abs(result.shortfallOrSurplus))}
             </p>
-            <p className="text-xs text-gray-400">Corpus: {formatInr(result.corpusAtTarget)}</p>
+            <p className="text-xs text-foreground-muted">Corpus: {formatInr(result.corpusAtTarget)}</p>
           </div>
         </div>
       ) : null}
@@ -216,10 +216,10 @@ function LinkHoldingPanel({ goalId, onClose }: { goalId: string; onClose: () => 
   });
 
   return (
-    <div className="bg-gray-50 rounded-xl border border-gray-200 p-4 space-y-3">
+    <div className="bg-border/50 rounded-xl border border-border p-4 space-y-3">
       <div className="flex items-center justify-between">
-        <p className="text-sm font-semibold text-gray-800">Link a Holding</p>
-        <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+        <p className="text-sm font-semibold text-foreground">Link a Holding</p>
+        <button onClick={onClose} className="text-foreground-muted hover:text-foreground-muted">
           <X className="w-4 h-4" />
         </button>
       </div>
@@ -227,7 +227,7 @@ function LinkHoldingPanel({ goalId, onClose }: { goalId: string; onClose: () => 
       <select
         value={selectedId}
         onChange={(e) => setSelectedId(e.target.value)}
-        className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#3C3489]/30 focus:border-[#3C3489] bg-white"
+        className="w-full px-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#3C3489]/30 focus:border-[#3C3489] bg-background-card"
       >
         <option value="">Select holding…</option>
         {holdingsData?.map((h) => (
@@ -237,14 +237,14 @@ function LinkHoldingPanel({ goalId, onClose }: { goalId: string; onClose: () => 
 
       <div className="flex gap-2">
         <div className="flex-1">
-          <label className="text-xs text-gray-400 block mb-1">Allocation %</label>
+          <label className="text-xs text-foreground-muted block mb-1">Allocation %</label>
           <input
             type="number"
             value={allocation}
             onChange={(e) => setAllocation(e.target.value)}
             min="1"
             max="100"
-            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#3C3489]/30 focus:border-[#3C3489]"
+            className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#3C3489]/30 focus:border-[#3C3489]"
           />
         </div>
         <button
@@ -307,7 +307,7 @@ export default function GoalDetailPage() {
 
   if (error || !goal) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+      <div className="flex flex-col items-center justify-center py-20 text-foreground-muted">
         <AlertCircle className="w-10 h-10 mb-3 text-red-400" />
         <p className="text-sm">Goal not found</p>
         <button
@@ -333,23 +333,23 @@ export default function GoalDetailPage() {
       {/* Back */}
       <button
         onClick={() => router.back()}
-        className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+        className="flex items-center gap-2 text-sm text-foreground-muted hover:text-foreground transition-colors"
       >
         <ArrowLeft className="w-4 h-4" /> Back to Goals
       </button>
 
       {/* Header card */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-6">
+      <div className="bg-background-card rounded-2xl border border-border p-6">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-4">
             <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${cfg.bg}`}>
               <Icon className={`w-7 h-7 ${cfg.color}`} />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">{goal.name}</h2>
+              <h2 className="text-xl font-bold text-foreground">{goal.name}</h2>
               <div className="flex items-center gap-2 mt-1 flex-wrap">
-                <span className="text-xs text-gray-400">{goal.category} · {timeLabel}</span>
-                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${HEALTH_STYLES[goal.healthStatus] ?? 'bg-gray-100 text-gray-600'}`}>
+                <span className="text-xs text-foreground-muted">{goal.category} · {timeLabel}</span>
+                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${HEALTH_STYLES[goal.healthStatus] ?? 'bg-border text-foreground-muted'}`}>
                   {goal.healthStatus.replace('_', ' ')}
                 </span>
               </div>
@@ -358,7 +358,7 @@ export default function GoalDetailPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowEditModal(true)}
-              className="flex items-center gap-1.5 text-xs font-medium text-gray-600 border border-gray-200 hover:bg-gray-50 px-3 py-2 rounded-lg transition-colors"
+              className="flex items-center gap-1.5 text-xs font-medium text-foreground-muted border border-border hover:bg-border/50 px-3 py-2 rounded-lg transition-colors"
             >
               <Pencil className="w-3.5 h-3.5" /> Edit
             </button>
@@ -374,12 +374,12 @@ export default function GoalDetailPage() {
         {/* Progress bar */}
         <div className="mt-6">
           <div className="flex justify-between text-sm mb-2">
-            <span className="font-medium text-gray-700">{goal.progressPercent.toFixed(1)}% achieved</span>
-            <span className="text-gray-400">
+            <span className="font-medium text-foreground">{goal.progressPercent.toFixed(1)}% achieved</span>
+            <span className="text-foreground-muted">
               {formatInr(goal.currentAmount)} / {formatInr(goal.targetAmount)}
             </span>
           </div>
-          <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
+          <div className="h-3 bg-border rounded-full overflow-hidden">
             <div
               className="h-full bg-[#3C3489] rounded-full transition-all duration-700"
               style={{ width: `${goal.progressPercent}%` }}
@@ -395,9 +395,9 @@ export default function GoalDetailPage() {
             { label: 'Monthly SIP',  value: formatInr(goal.recommendedMonthlySip) },
             { label: 'Time Left',    value: timeLabel },
           ].map((s) => (
-            <div key={s.label} className="bg-gray-50 rounded-xl px-4 py-3">
-              <p className="text-xs text-gray-400">{s.label}</p>
-              <p className="text-sm font-bold text-gray-900 mt-0.5">{s.value}</p>
+            <div key={s.label} className="bg-border/50 rounded-xl px-4 py-3">
+              <p className="text-xs text-foreground-muted">{s.label}</p>
+              <p className="text-sm font-bold text-foreground mt-0.5">{s.value}</p>
             </div>
           ))}
         </div>
@@ -405,8 +405,8 @@ export default function GoalDetailPage() {
 
       {/* Timeline chart */}
       {goal.timelineData.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-100 p-6">
-          <h3 className="text-sm font-semibold text-gray-900 mb-4">Projected Growth</h3>
+        <div className="bg-background-card rounded-2xl border border-border p-6">
+          <h3 className="text-sm font-semibold text-foreground mb-4">Projected Growth</h3>
           <div className="h-52">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={goal.timelineData} margin={{ top: 5, right: 5, bottom: 0, left: 0 }}>
@@ -419,7 +419,7 @@ export default function GoalDetailPage() {
                 <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#9CA3AF' }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
                 <YAxis tickFormatter={(v: number) => formatInr(v)} tick={{ fontSize: 10, fill: '#9CA3AF' }} tickLine={false} axisLine={false} width={58} />
                 <Tooltip
-                  formatter={(v: number) => [formatInr(v), 'Projected']}
+                  formatter={(v: any) => formatInr(Number(v))}
                   contentStyle={{ borderRadius: 10, fontSize: 12, border: '1px solid #E5E7EB' }}
                 />
                 <ReferenceLine
@@ -428,7 +428,7 @@ export default function GoalDetailPage() {
                   strokeDasharray="4 4"
                   label={{ value: 'Target', position: 'right', fontSize: 10, fill: '#EF4444' }}
                 />
-                <Area type="monotone" dataKey="projected" stroke="#3C3489" strokeWidth={2.5} fill="url(#goalGrad)" dot={false} />
+                <Area name="Projected" type="monotone" dataKey="projected" stroke="#3C3489" strokeWidth={2.5} fill="url(#goalGrad)" dot={false} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -439,9 +439,9 @@ export default function GoalDetailPage() {
       <GoalSimulator goal={goal} />
 
       {/* Linked holdings */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-6">
+      <div className="bg-background-card rounded-2xl border border-border p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-semibold text-gray-900">Linked Holdings</h3>
+          <h3 className="text-sm font-semibold text-foreground">Linked Holdings</h3>
           <button
             onClick={() => setShowLinkPanel((v) => !v)}
             className="flex items-center gap-1.5 text-xs font-medium text-[#3C3489] border border-[#3C3489]/30 hover:bg-[#3C3489]/5 px-3 py-1.5 rounded-lg transition-colors"
@@ -457,16 +457,16 @@ export default function GoalDetailPage() {
         )}
 
         {goal.linkedHoldings.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-6">
+          <p className="text-sm text-foreground-muted text-center py-6">
             No holdings linked yet. Link holdings to track goal progress automatically.
           </p>
         ) : (
           <ul className="space-y-2">
             {goal.linkedHoldings.map((gh) => (
-              <li key={gh.id} className="flex items-center justify-between gap-3 p-3 bg-gray-50 rounded-xl">
+              <li key={gh.id} className="flex items-center justify-between gap-3 p-3 bg-border/50 rounded-xl">
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-gray-800 truncate">{gh.holding.name}</p>
-                  <p className="text-xs text-gray-400">
+                  <p className="text-sm font-medium text-foreground truncate">{gh.holding.name}</p>
+                  <p className="text-xs text-foreground-muted">
                     {gh.holding.assetClass} · {formatInr(gh.holding.currentValue)}
                   </p>
                 </div>
@@ -482,15 +482,15 @@ export default function GoalDetailPage() {
       {/* Delete confirmation modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
-            <h3 className="text-base font-bold text-gray-900 mb-2">Delete Goal?</h3>
-            <p className="text-sm text-gray-500 mb-5">
+          <div className="bg-background-card rounded-2xl p-6 w-full max-w-sm shadow-xl">
+            <h3 className="text-base font-bold text-foreground mb-2">Delete Goal?</h3>
+            <p className="text-sm text-foreground-muted mb-5">
               This will permanently delete <strong>{goal.name}</strong> and unlink all associated holdings. This action cannot be undone.
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowDeleteModal(false)}
-                className="flex-1 text-sm font-medium text-gray-600 border border-gray-200 rounded-xl py-2.5 hover:bg-gray-50 transition-colors"
+                className="flex-1 text-sm font-medium text-foreground-muted border border-border rounded-xl py-2.5 hover:bg-border/50 transition-colors"
               >
                 Cancel
               </button>
@@ -551,40 +551,40 @@ function EditGoalModal({
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
+      <div className="bg-background-card rounded-2xl p-6 w-full max-w-md shadow-xl">
         <div className="flex items-center justify-between mb-5">
-          <h3 className="text-base font-bold text-gray-900">Edit Goal</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <h3 className="text-base font-bold text-foreground">Edit Goal</h3>
+          <button onClick={onClose} className="text-foreground-muted hover:text-foreground-muted">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <div className="space-y-4">
           <div>
-            <label className="text-xs font-semibold text-gray-600 block mb-1.5">Goal Name</label>
+            <label className="text-xs font-semibold text-foreground-muted block mb-1.5">Goal Name</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#3C3489]/30 focus:border-[#3C3489]"
+              className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#3C3489]/30 focus:border-[#3C3489]"
             />
           </div>
           <div>
-            <label className="text-xs font-semibold text-gray-600 block mb-1.5">Target Amount (₹)</label>
+            <label className="text-xs font-semibold text-foreground-muted block mb-1.5">Target Amount (₹)</label>
             <input
               type="number"
               value={targetAmount}
               onChange={(e) => setTargetAmount(e.target.value)}
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#3C3489]/30 focus:border-[#3C3489]"
+              className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#3C3489]/30 focus:border-[#3C3489]"
             />
           </div>
           <div>
-            <label className="text-xs font-semibold text-gray-600 block mb-1.5">Target Date</label>
+            <label className="text-xs font-semibold text-foreground-muted block mb-1.5">Target Date</label>
             <input
               type="date"
               value={targetDate}
               onChange={(e) => setTargetDate(e.target.value)}
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#3C3489]/30 focus:border-[#3C3489]"
+              className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#3C3489]/30 focus:border-[#3C3489]"
             />
           </div>
 
@@ -595,7 +595,7 @@ function EditGoalModal({
           <div className="flex gap-3 pt-1">
             <button
               onClick={onClose}
-              className="flex-1 text-sm font-medium text-gray-600 border border-gray-200 rounded-xl py-2.5 hover:bg-gray-50 transition-colors"
+              className="flex-1 text-sm font-medium text-foreground-muted border border-border rounded-xl py-2.5 hover:bg-border/50 transition-colors"
             >
               Cancel
             </button>

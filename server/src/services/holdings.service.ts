@@ -77,6 +77,33 @@ function appError(message: string, statusCode: number): Error {
   return Object.assign(new Error(message), { statusCode });
 }
 
+/** Derive P&L from stored value or compute from currentValue - totalInvested */
+function derivePnl(
+  stored:        unknown,
+  currentValue:  unknown,
+  totalInvested: unknown
+): number | null {
+  const s  = toNum(stored);
+  if (s !== 0) return s;                               // trust stored non-zero value
+  const cv = toNum(currentValue);
+  const ti = toNum(totalInvested);
+  if (cv > 0 && ti > 0) return cv - ti;               // compute on-the-fly
+  return null;
+}
+
+function derivePnlPct(
+  stored:        unknown,
+  currentValue:  unknown,
+  totalInvested: unknown
+): number | null {
+  const s  = toNum(stored);
+  if (s !== 0) return s;
+  const cv = toNum(currentValue);
+  const ti = toNum(totalInvested);
+  if (cv > 0 && ti > 0) return ((cv - ti) / ti) * 100;
+  return null;
+}
+
 /** Fetch a live price for the holding; returns null for non-priceable assets. */
 async function fetchLivePrice(
   assetClass: AssetClass,
@@ -178,8 +205,8 @@ export async function getHoldings(
     totalInvested: toNum(h.totalInvested),
     currentPrice:  h.currentPrice ? toNum(h.currentPrice) : null,
     currentValue:  h.currentValue ? toNum(h.currentValue) : null,
-    pnlAbsolute:   h.pnlAbsolute ? toNum(h.pnlAbsolute) : null,
-    pnlPercent:    h.pnlPercent ? toNum(h.pnlPercent) : null,
+    pnlAbsolute:   derivePnl(h.pnlAbsolute, h.currentValue, h.totalInvested),
+    pnlPercent:    derivePnlPct(h.pnlPercent, h.currentValue, h.totalInvested),
     xirr:          h.xirr ? toNum(h.xirr) : null,
     riskScore:     h.riskScore,
     brokerSource:  h.brokerSource,
@@ -230,8 +257,8 @@ export async function getHoldingById(userId: string, holdingId: string) {
     totalInvested: toNum(holding.totalInvested),
     currentPrice:  holding.currentPrice ? toNum(holding.currentPrice) : null,
     currentValue:  holding.currentValue ? toNum(holding.currentValue) : null,
-    pnlAbsolute:   holding.pnlAbsolute ? toNum(holding.pnlAbsolute) : null,
-    pnlPercent:    holding.pnlPercent ? toNum(holding.pnlPercent) : null,
+    pnlAbsolute:   derivePnl(holding.pnlAbsolute, holding.currentValue, holding.totalInvested),
+    pnlPercent:    derivePnlPct(holding.pnlPercent, holding.currentValue, holding.totalInvested),
     xirr:          holding.xirr ? toNum(holding.xirr) : null,
     riskScore:     holding.riskScore,
     brokerSource:  holding.brokerSource,

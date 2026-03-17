@@ -288,6 +288,39 @@ export async function searchSymbols(query: string, assetClass: string): Promise<
     }
   }
 
+  if (assetClass === 'CRYPTO') {
+    try {
+      interface CoinGeckoSearchCoin {
+        id:              string;
+        name:            string;
+        symbol:          string;
+        market_cap_rank: number | null;
+      }
+      interface CoinGeckoSearchResponse {
+        coins: CoinGeckoSearchCoin[];
+      }
+
+      const res = await axios.get<CoinGeckoSearchResponse>(
+        'https://api.coingecko.com/api/v3/search',
+        { params: { query }, timeout: 8_000 }
+      );
+
+      const results: SearchResult[] = res.data.coins
+        .slice(0, 12)
+        .map((c) => ({
+          symbol:     c.id,                                               // coinId used for price lookups
+          name:       `${c.name} · ${c.symbol.toUpperCase()}`,           // "Bitcoin · BTC"
+          assetClass: 'CRYPTO',
+          exchange:   c.market_cap_rank ? `Rank #${c.market_cap_rank}` : undefined,
+        }));
+
+      await cacheSet(key, results, TTL.SEARCH);
+      return results;
+    } catch {
+      return [];
+    }
+  }
+
   return [];
 }
 
@@ -350,13 +383,45 @@ export async function getPriceHistory(
       { params: { vs_currency: 'inr', days }, timeout: 10_000 }
     );
 
-    const points: HistoryPoint[] = res.data.prices.map(([ts, price]) => ({
-      date:  new Date(ts).toISOString().split('T')[0] as string,
-      price: Math.round(price * 100) / 100,
-    }));
+    // CoinGecko returns many intraday points for short ranges; downsample to 1 per day
+    const seen = new Set<string>();
+    const points: HistoryPoint[] = [];
+    for (const [ts, price] of res.data.prices) {
+      const date = new Date(ts).toISOString().split('T')[0] as string;
+      if (!seen.has(date)) {
+        seen.add(date);
+        points.push({ date, price: Math.round(price * 100) / 100 });
+      }
+    }
 
     await cacheSet(key, points, 600);
     return points;
+  }
+
+  if (assetClass === 'GOLD' || assetClass === 'SGB') {
+    try {
+      // GC=F is Gold Futures on COMEX (USD/troy-oz); convert to INR/gram
+      const [rawRows, usdInr] = await Promise.all([
+        yahooFinance.historical('GC=F', {
+          period1:  getStartDate(conf.yPeriod),
+          interval: conf.interval as '1d' | '1wk' | '1mo',
+        }),
+        getUsdInrRate(),
+      ]);
+
+      const rows = rawRows as Array<{ date: Date; close?: number | null }>;
+      const points: HistoryPoint[] = rows
+        .filter((r) => r.close != null)
+        .map((r) => ({
+          date:  r.date.toISOString().split('T')[0] as string,
+          price: Math.round((r.close as number) * usdInr * TROY_OZ_TO_GRAM * 100) / 100,
+        }));
+
+      await cacheSet(key, points, 3_600);
+      return points;
+    } catch {
+      return [];
+    }
   }
 
   return [];

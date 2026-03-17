@@ -34,30 +34,49 @@ const schema = z
 
 type RegisterForm = z.infer<typeof schema>;
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+import React from 'react';
 
-const inputClass =
-  'block w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm text-gray-900 ' +
-  'placeholder-gray-400 bg-white transition-colors ' +
-  'focus:outline-none focus:ring-2 focus:ring-[#3C3489]/30 focus:border-[#3C3489]';
+// ─── Input Component ──────────────────────────────────────────────────────────
 
-function FormInput({
-  label,
-  error,
-  children,
-}: {
-  label: string;
-  error?: string;
-  children: React.ReactNode;
-}) {
+const FloatingInput = React.forwardRef<
+  HTMLInputElement,
+  {
+    label: string;
+    error?: string;
+    rightElement?: React.ReactNode;
+    children?: React.ReactNode;
+  } & React.InputHTMLAttributes<HTMLInputElement>
+>(({ label, error, rightElement, children, id, className, ...props }, ref) => {
+  const inputId = id || label.replace(/\s+/g, '-').toLowerCase();
+  
   return (
-    <div className="space-y-1.5">
-      <label className="block text-sm font-medium text-gray-700">{label}</label>
+    <div className="space-y-1">
+      <div className="relative group">
+        <input
+          ref={ref}
+          id={inputId}
+          placeholder=" "
+          className={`peer block w-full px-4 pt-5 pb-2 border border-border rounded-xl text-sm text-foreground placeholder-transparent bg-background-card/60 backdrop-blur-sm transition-all duration-300 focus:outline-none focus:border-[#6366f1] focus:ring-0 focus:shadow-[0_0_20px_rgba(99,102,241,0.2)] hover:border-foreground-muted ${className || ''}`}
+          {...props}
+        />
+        <label
+          htmlFor={inputId}
+          className="absolute left-4 top-3.5 text-sm font-medium text-foreground-muted transition-all duration-300 pointer-events-none peer-placeholder-shown:top-4 peer-placeholder-shown:text-sm peer-focus:top-1.5 peer-focus:text-[10px] peer-focus:text-[#6366f1] peer-[:not(:placeholder-shown)]:top-1.5 peer-[:not(:placeholder-shown)]:text-[10px]"
+        >
+          {label}
+        </label>
+        {rightElement && (
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center">
+            {rightElement}
+          </div>
+        )}
+      </div>
       {children}
-      {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
+      {error && <p className="text-xs text-red-500 pl-1">{error}</p>}
     </div>
   );
-}
+});
+FloatingInput.displayName = 'FloatingInput';
 
 const strengthLevels = [
   { label: 'Very weak', color: 'bg-red-400' },
@@ -132,58 +151,52 @@ export default function RegisterPage() {
 
   return (
     <div className="w-full max-w-md">
-      <div className="bg-white rounded-2xl shadow-xl border border-gray-100 px-8 py-10">
+      <div className="bg-background-card rounded-2xl shadow-xl border border-border px-8 py-10">
 
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Create your account</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="text-2xl font-bold text-foreground">Create your account</h1>
+          <p className="text-sm text-foreground-muted mt-1">
             Start managing all your investments in one place
           </p>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           {/* Full Name */}
-          <FormInput label="Full name" error={errors.fullName?.message}>
-            <input
-              {...register('fullName')}
-              type="text"
-              placeholder="Arjun Sharma"
-              autoComplete="name"
-              className={inputClass}
-            />
-          </FormInput>
+          <FloatingInput
+            label="Full name"
+            error={errors.fullName?.message}
+            {...register('fullName')}
+            type="text"
+            autoComplete="name"
+          />
 
           {/* Email */}
-          <FormInput label="Email address" error={errors.email?.message}>
-            <input
-              {...register('email')}
-              type="email"
-              placeholder="you@example.com"
-              autoComplete="email"
-              className={inputClass}
-            />
-          </FormInput>
+          <FloatingInput
+            label="Email address"
+            error={errors.email?.message}
+            {...register('email')}
+            type="email"
+            autoComplete="email"
+          />
 
           {/* Password */}
-          <FormInput label="Password" error={errors.password?.message}>
-            <div className="relative">
-              <input
-                {...register('password')}
-                type={showPassword ? 'text' : 'password'}
-                placeholder="Min. 8 characters"
-                autoComplete="new-password"
-                className={`${inputClass} pr-11`}
-              />
+          <FloatingInput
+            label="Password"
+            error={errors.password?.message}
+            {...register('password')}
+            type={showPassword ? 'text' : 'password'}
+            autoComplete="new-password"
+            rightElement={
               <button
                 type="button"
                 onClick={() => setShowPassword((p) => !p)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="text-foreground-muted hover:text-foreground transition-colors p-1"
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
-            </div>
-
+            }
+          >
             {/* Strength bar */}
             {passwordValue.length > 0 && (
               <div className="mt-2 space-y-1">
@@ -192,57 +205,55 @@ export default function RegisterPage() {
                     <div
                       key={i}
                       className={`h-1 flex-1 rounded-full transition-all duration-200 ${
-                        i < pwStrength ? strength.color : 'bg-gray-200'
+                        i < pwStrength ? strength.color : 'bg-border'
                       }`}
                     />
                   ))}
                 </div>
-                <p className="text-xs text-gray-400">{strength.label}</p>
+                <p className="text-[10px] text-foreground-muted pt-1 pl-1">{strength.label}</p>
               </div>
             )}
-          </FormInput>
+          </FloatingInput>
 
           {/* Confirm Password */}
-          <FormInput label="Confirm password" error={errors.confirmPassword?.message}>
-            <div className="relative">
-              <input
-                {...register('confirmPassword')}
-                type={showConfirm ? 'text' : 'password'}
-                placeholder="Re-enter password"
-                autoComplete="new-password"
-                className={`${inputClass} pr-11`}
-              />
+          <FloatingInput
+            label="Confirm password"
+            error={errors.confirmPassword?.message}
+            {...register('confirmPassword')}
+            type={showConfirm ? 'text' : 'password'}
+            autoComplete="new-password"
+            rightElement={
               <button
                 type="button"
                 onClick={() => setShowConfirm((p) => !p)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="text-foreground-muted hover:text-foreground transition-colors p-1"
               >
                 {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
-            </div>
-          </FormInput>
+            }
+          />
 
           {apiError && (
-            <p className="text-sm text-red-500 bg-red-50 border border-red-100 rounded-xl px-4 py-2.5">
+            <p className="text-sm text-red-500 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-2.5">
               {apiError}
             </p>
           )}
 
           {/* Terms */}
-          <p className="text-xs text-gray-400 leading-relaxed">
+          <p className="text-[11px] text-foreground-muted leading-relaxed text-center px-2">
             By creating an account you agree to our{' '}
-            <a href="#" className="text-[#3C3489] hover:underline">Terms of Service</a>
+            <a href="#" className="text-[#6366f1] hover:underline">Terms of Service</a>
             {' '}and{' '}
-            <a href="#" className="text-[#3C3489] hover:underline">Privacy Policy</a>.
+            <a href="#" className="text-[#6366f1] hover:underline">Privacy Policy</a>.
           </p>
 
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-2.5 px-4 rounded-xl text-sm font-semibold text-white
-                       bg-[#3C3489] hover:bg-[#2d2871] active:scale-[0.98]
+            className="w-full py-3 px-4 rounded-xl text-sm font-bold text-white
+                       bg-premium-gradient shadow-md shadow-[#6366f1]/20 hover:shadow-lg hover:-translate-y-0.5 active:scale-95
                        disabled:opacity-60 disabled:cursor-not-allowed
-                       transition-all duration-150 flex items-center justify-center gap-2"
+                       transition-all duration-300 flex items-center justify-center gap-2"
           >
             {isLoading ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -254,9 +265,9 @@ export default function RegisterPage() {
         </form>
       </div>
 
-      <p className="text-center text-sm text-gray-500 mt-6">
+      <p className="text-center text-sm text-foreground-muted mt-6">
         Already have an account?{' '}
-        <Link href="/login" className="font-medium text-[#3C3489] hover:text-[#2d2871] transition-colors">
+        <Link href="/login" className="font-semibold text-[#6366f1] hover:text-[#818cf8] transition-colors">
           Sign in
         </Link>
       </p>

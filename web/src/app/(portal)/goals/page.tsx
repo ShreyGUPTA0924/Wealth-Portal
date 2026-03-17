@@ -54,7 +54,7 @@ const CATEGORY_CONFIG: Record<string, { icon: React.ElementType; color: string; 
   TRAVEL:     { icon: Plane,          color: 'text-amber-600',   bg: 'bg-amber-100' },
   EMERGENCY:  { icon: Shield,         color: 'text-red-600',     bg: 'bg-red-100' },
   WEDDING:    { icon: Heart,          color: 'text-pink-600',    bg: 'bg-pink-100' },
-  CUSTOM:     { icon: Target,         color: 'text-gray-600',    bg: 'bg-gray-100' },
+  CUSTOM:     { icon: Target,         color: 'text-foreground-muted',    bg: 'bg-border' },
 };
 
 const HEALTH_STYLES: Record<string, string> = {
@@ -67,18 +67,18 @@ const HEALTH_STYLES: Record<string, string> = {
 
 function GoalCardSkeleton() {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-5 animate-pulse">
+    <div className="bg-background-card rounded-2xl border border-border p-5 animate-pulse">
       <div className="flex items-center gap-3 mb-4">
-        <div className="w-10 h-10 rounded-xl bg-gray-100" />
+        <div className="w-10 h-10 rounded-xl bg-border" />
         <div className="flex-1">
-          <div className="h-4 w-32 bg-gray-100 rounded mb-1" />
-          <div className="h-3 w-20 bg-gray-100 rounded" />
+          <div className="h-4 w-32 bg-border rounded mb-1" />
+          <div className="h-3 w-20 bg-border rounded" />
         </div>
       </div>
-      <div className="h-2 bg-gray-100 rounded-full mb-3" />
+      <div className="h-2 bg-border rounded-full mb-3" />
       <div className="grid grid-cols-2 gap-2">
-        <div className="h-10 bg-gray-100 rounded-lg" />
-        <div className="h-10 bg-gray-100 rounded-lg" />
+        <div className="h-10 bg-border rounded-lg" />
+        <div className="h-10 bg-border rounded-lg" />
       </div>
     </div>
   );
@@ -92,7 +92,7 @@ function GoalCard({ goal }: { goal: Goal }) {
 
   return (
     <Link href={`/goals/${goal.id}`} className="block group">
-      <div className="bg-white rounded-2xl border border-gray-100 p-5 hover:shadow-md hover:border-[#3C3489]/20 transition-all duration-200">
+      <div className="bg-background-card rounded-2xl border border-border p-5 hover:shadow-md hover:border-[#3C3489]/20 transition-all duration-200">
         {/* Header */}
         <div className="flex items-start justify-between gap-3 mb-4">
           <div className="flex items-center gap-3">
@@ -100,24 +100,24 @@ function GoalCard({ goal }: { goal: Goal }) {
               <Icon className={`w-5 h-5 ${cfg.color}`} />
             </div>
             <div>
-              <p className="text-sm font-semibold text-gray-900 group-hover:text-[#3C3489] transition-colors leading-tight">
+              <p className="text-sm font-semibold text-foreground group-hover:text-[#3C3489] transition-colors leading-tight">
                 {goal.name}
               </p>
-              <p className="text-xs text-gray-400 mt-0.5">{goal.category} · {monthsLeft(goal.targetDate)}</p>
+              <p className="text-xs text-foreground-muted mt-0.5">{goal.category} · {monthsLeft(goal.targetDate)}</p>
             </div>
           </div>
-          <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${HEALTH_STYLES[goal.healthStatus] ?? 'bg-gray-100 text-gray-600'}`}>
+          <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${HEALTH_STYLES[goal.healthStatus] ?? 'bg-border text-foreground-muted'}`}>
             {goal.healthStatus.replace('_', ' ')}
           </span>
         </div>
 
         {/* Progress bar */}
         <div className="mb-3">
-          <div className="flex justify-between text-xs text-gray-400 mb-1.5">
+          <div className="flex justify-between text-xs text-foreground-muted mb-1.5">
             <span>{goal.progressPercent.toFixed(0)}% achieved</span>
             <span>{formatInr(goal.currentAmount)} / {formatInr(goal.targetAmount)}</span>
           </div>
-          <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+          <div className="h-2.5 bg-border rounded-full overflow-hidden">
             <div
               className="h-full bg-[#3C3489] rounded-full transition-all duration-700"
               style={{ width: `${goal.progressPercent}%` }}
@@ -127,12 +127,12 @@ function GoalCard({ goal }: { goal: Goal }) {
 
         {/* Footer stats */}
         <div className="grid grid-cols-2 gap-2 mt-4">
-          <div className="bg-gray-50 rounded-xl px-3 py-2">
-            <p className="text-xs text-gray-400">Target</p>
-            <p className="text-sm font-semibold text-gray-900">{formatInr(goal.targetAmount)}</p>
+          <div className="bg-border/50 rounded-xl px-3 py-2">
+            <p className="text-xs text-foreground-muted">Target</p>
+            <p className="text-sm font-semibold text-foreground">{formatInr(goal.targetAmount)}</p>
           </div>
-          <div className="bg-gray-50 rounded-xl px-3 py-2">
-            <p className="text-xs text-gray-400">Monthly SIP</p>
+          <div className="bg-border/50 rounded-xl px-3 py-2">
+            <p className="text-xs text-foreground-muted">Monthly SIP</p>
             <p className="text-sm font-semibold text-[#3C3489]">
               {goal.recommendedMonthlySip ? formatInr(goal.recommendedMonthlySip) : '—'}
             </p>
@@ -161,8 +161,8 @@ export default function GoalsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">My Goals</h2>
-          <p className="text-sm text-gray-400 mt-0.5">Track your financial milestones</p>
+          <h2 className="text-xl font-bold text-foreground">My Goals</h2>
+          <p className="text-sm text-foreground-muted mt-0.5">Track your financial milestones</p>
         </div>
         <Link
           href="/goals/new"
@@ -174,7 +174,7 @@ export default function GoalsPage() {
 
       {/* Error */}
       {error && (
-        <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+        <div className="flex flex-col items-center justify-center py-16 text-foreground-muted">
           <AlertCircle className="w-8 h-8 mb-3 text-red-400" />
           <p className="text-sm">Failed to load goals</p>
           <button onClick={() => refetch()} className="mt-2 text-xs text-[#3C3489] hover:underline">
@@ -192,12 +192,12 @@ export default function GoalsPage() {
 
       {/* Empty state */}
       {!isLoading && !error && goals.length === 0 && (
-        <div className="bg-white rounded-2xl border border-gray-100 p-16 flex flex-col items-center text-center">
+        <div className="bg-background-card rounded-2xl border border-border p-16 flex flex-col items-center text-center">
           <div className="w-16 h-16 rounded-2xl bg-[#3C3489]/10 flex items-center justify-center mb-4">
             <Target className="w-8 h-8 text-[#3C3489]" />
           </div>
-          <h3 className="text-base font-semibold text-gray-900 mb-2">Create your first goal</h3>
-          <p className="text-sm text-gray-400 max-w-xs mb-6">
+          <h3 className="text-base font-semibold text-foreground mb-2">Create your first goal</h3>
+          <p className="text-sm text-foreground-muted max-w-xs mb-6">
             Set financial goals like retirement, home purchase, or education and track your progress.
           </p>
           <Link
@@ -214,25 +214,25 @@ export default function GoalsPage() {
         <>
           {/* Summary stats */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white rounded-2xl border border-gray-100 p-4">
-              <p className="text-xs text-gray-400">Total Goals</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">{goals.length}</p>
+            <div className="bg-background-card rounded-2xl border border-border p-4">
+              <p className="text-xs text-foreground-muted">Total Goals</p>
+              <p className="text-2xl font-bold text-foreground mt-1">{goals.length}</p>
             </div>
-            <div className="bg-white rounded-2xl border border-gray-100 p-4">
-              <p className="text-xs text-gray-400">On Track</p>
+            <div className="bg-background-card rounded-2xl border border-border p-4">
+              <p className="text-xs text-foreground-muted">On Track</p>
               <p className="text-2xl font-bold text-green-600 mt-1">
                 {goals.filter((g) => g.healthStatus === 'ON_TRACK').length}
               </p>
             </div>
-            <div className="bg-white rounded-2xl border border-gray-100 p-4">
-              <p className="text-xs text-gray-400">At Risk</p>
+            <div className="bg-background-card rounded-2xl border border-border p-4">
+              <p className="text-xs text-foreground-muted">At Risk</p>
               <p className="text-2xl font-bold text-amber-600 mt-1">
                 {goals.filter((g) => g.healthStatus === 'AT_RISK').length}
               </p>
             </div>
-            <div className="bg-white rounded-2xl border border-gray-100 p-4">
-              <p className="text-xs text-gray-400">Total Target</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">
+            <div className="bg-background-card rounded-2xl border border-border p-4">
+              <p className="text-xs text-foreground-muted">Total Target</p>
+              <p className="text-2xl font-bold text-foreground mt-1">
                 {formatInr(goals.reduce((s, g) => s + g.targetAmount, 0))}
               </p>
             </div>
