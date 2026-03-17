@@ -178,9 +178,9 @@ function SymbolCombobox({ assetType, onSelect, error }: SymbolComboboxProps) {
                 No results — you can still enter manually
               </li>
             ) : (
-              results.map((r) => (
+              results.map((r, i) => (
                 <li
-                  key={`${r.assetClass}-${r.symbol}`}
+                  key={`${r.assetClass}-${r.symbol}-${i}`}
                   className="px-4 py-2.5 hover:bg-border/50 cursor-pointer border-b border-border/50 last:border-0"
                   onMouseDown={() => handleSelect(r)}
                 >
