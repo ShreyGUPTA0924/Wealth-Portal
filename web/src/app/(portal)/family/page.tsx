@@ -1,13 +1,15 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Users, Plus, TrendingUp, TrendingDown, AlertCircle,
-  Lock, ArrowRight, X, ChevronDown,
+  Lock, ArrowRight, X, ChevronDown, Pencil, Trash2, Loader2,
 } from 'lucide-react';
 import Link from 'next/link';
 import apiClient from '@/lib/api-client';
+import { AddHoldingModal } from '@/components/family/AddHoldingModal';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -240,9 +242,159 @@ function AddMemberModal({ onClose }: { onClose: () => void }) {
   );
 }
 
+// ─── Edit Member Modal ───────────────────────────────────────────────────────
+
+function EditMemberModal({
+  member,
+  onClose,
+  onSuccess,
+}: {
+  member: FamilyMember;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const queryClient = useQueryClient();
+  const [form, setForm] = useState({
+    fullName: member.fullName,
+    monthlyAllowance: member.monthlyAllowance?.toString() ?? '',
+  });
+
+  const mutation = useMutation({
+    mutationFn: () =>
+      apiClient.patch(`/api/family/members/${member.id}`, {
+        fullName: form.fullName,
+        monthlyAllowance: form.monthlyAllowance ? parseFloat(form.monthlyAllowance) : undefined,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['family'] });
+      onSuccess();
+      onClose();
+    },
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative bg-background-card rounded-2xl shadow-2xl w-full max-w-md p-6">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-lg font-semibold text-foreground">Edit Member</h2>
+          <button onClick={onClose} className="text-foreground-muted hover:text-foreground transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="space-y-4">
+          <div>
+            <label className="text-xs font-medium text-foreground-muted uppercase tracking-wide">Full Name</label>
+            <input
+              value={form.fullName}
+              onChange={(e) => setForm((f) => ({ ...f, fullName: e.target.value }))}
+              className="mt-1 w-full px-3 py-2.5 rounded-xl border border-border text-sm focus:outline-none focus:border-[#3C3489] transition-colors"
+              placeholder="Enter full name"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-foreground-muted uppercase tracking-wide">Monthly Allowance (₹)</label>
+            <input
+              type="number"
+              value={form.monthlyAllowance}
+              onChange={(e) => setForm((f) => ({ ...f, monthlyAllowance: e.target.value }))}
+              className="mt-1 w-full px-3 py-2.5 rounded-xl border border-border text-sm focus:outline-none focus:border-[#3C3489] transition-colors"
+              placeholder="0"
+              min="0"
+            />
+          </div>
+          {mutation.isError && (
+            <p className="text-sm text-red-500">Failed to update. Please try again.</p>
+          )}
+          <div className="flex gap-3 pt-2">
+            <button
+              onClick={onClose}
+              className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm text-foreground-muted hover:bg-border/50 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => mutation.mutate()}
+              disabled={!form.fullName.trim() || mutation.isPending}
+              className="flex-1 px-4 py-2.5 rounded-xl bg-[#3C3489] text-white text-sm font-medium hover:bg-[#2d2871] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {mutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+              Save
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Delete Confirm Modal ────────────────────────────────────────────────────
+
+function DeleteConfirmModal({
+  member,
+  onClose,
+  onConfirm,
+}: {
+  member: FamilyMember;
+  onClose: () => void;
+  onConfirm: () => void;
+}) {
+  const queryClient = useQueryClient();
+  const router = useRouter();
+
+  const mutation = useMutation({
+    mutationFn: () => apiClient.delete(`/api/family/members/${member.id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['family'] });
+      onConfirm();
+      onClose();
+      router.push('/family');
+    },
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative bg-background-card rounded-2xl shadow-2xl w-full max-w-md p-6">
+        <h2 className="text-lg font-semibold text-foreground mb-2">Delete {member.fullName}?</h2>
+        <p className="text-sm text-foreground-muted mb-6">
+          Their portfolio and all holdings will be removed permanently.
+        </p>
+        {mutation.isError && (
+          <p className="text-sm text-red-500 mb-4">Failed to delete. Please try again.</p>
+        )}
+        <div className="flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm text-foreground-muted hover:bg-border/50 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => mutation.mutate()}
+            disabled={mutation.isPending}
+            className="flex-1 px-4 py-2.5 rounded-xl bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            {mutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Member Card ──────────────────────────────────────────────────────────────
 
-function MemberCard({ member, index }: { member: FamilyMember; index: number }) {
+interface MemberCardProps {
+  member: FamilyMember;
+  index: number;
+  onEdit: (m: FamilyMember) => void;
+  onDelete: (m: FamilyMember) => void;
+  onAddHolding: (m: FamilyMember) => void;
+}
+
+function MemberCard({ member, index, onEdit, onDelete, onAddHolding }: MemberCardProps) {
   const initials = member.fullName
     .split(' ')
     .map((w) => w[0])
@@ -253,7 +405,7 @@ function MemberCard({ member, index }: { member: FamilyMember; index: number }) 
   const portfolio = member.portfolio;
 
   return (
-    <div className="bg-background-card rounded-2xl border border-border p-5 hover:shadow-sm shadow-black/5 transition-shadow">
+    <div className="bg-background-card rounded-2xl border border-border p-5 hover:shadow-sm shadow-black/5 transition-shadow group">
       <div className="flex items-start justify-between gap-3 mb-4">
         <div className="flex items-center gap-3">
           <div className={`w-11 h-11 rounded-xl ${memberColor(index)} flex items-center justify-center text-white font-bold text-sm shrink-0`}>
@@ -277,6 +429,22 @@ function MemberCard({ member, index }: { member: FamilyMember; index: number }) 
               )}
             </div>
           </div>
+        </div>
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            onClick={() => onEdit(member)}
+            className="p-1.5 rounded-lg text-foreground-muted hover:text-foreground hover:bg-border/50 transition-colors"
+            title="Edit member"
+          >
+            <Pencil className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => onDelete(member)}
+            className="p-1.5 rounded-lg text-foreground-muted hover:text-red-500 hover:bg-red-50 transition-colors"
+            title="Delete member"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
@@ -330,12 +498,12 @@ function MemberCard({ member, index }: { member: FamilyMember; index: number }) 
             <Lock className="w-3.5 h-3.5" />
           </button>
         ) : (
-          <Link
-            href={`/family/${member.id}`}
+          <button
+            onClick={() => onAddHolding(member)}
             className="px-3 py-2 rounded-xl border border-border text-foreground-muted text-xs hover:bg-border/50 transition-colors"
           >
             + Holding
-          </Link>
+          </button>
         )}
       </div>
     </div>
@@ -359,6 +527,9 @@ function FamilySkeleton() {
 
 export default function FamilyPage() {
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editMember, setEditMember] = useState<FamilyMember | null>(null);
+  const [deleteMember, setDeleteMember] = useState<FamilyMember | null>(null);
+  const [addHoldingMember, setAddHoldingMember] = useState<FamilyMember | null>(null);
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['family'],
@@ -463,7 +634,14 @@ export default function FamilyPage() {
             {/* Member Cards Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {members.map((m, i) => (
-                <MemberCard key={m.id} member={m} index={i} />
+                <MemberCard
+                  key={m.id}
+                  member={m}
+                  index={i}
+                  onEdit={setEditMember}
+                  onDelete={setDeleteMember}
+                  onAddHolding={setAddHoldingMember}
+                />
               ))}
             </div>
           </>
@@ -471,6 +649,27 @@ export default function FamilyPage() {
       </div>
 
       {showAddModal && <AddMemberModal onClose={() => setShowAddModal(false)} />}
+      {editMember && (
+        <EditMemberModal
+          member={editMember}
+          onClose={() => setEditMember(null)}
+          onSuccess={() => setEditMember(null)}
+        />
+      )}
+      {deleteMember && (
+        <DeleteConfirmModal
+          member={deleteMember}
+          onClose={() => setDeleteMember(null)}
+          onConfirm={() => setDeleteMember(null)}
+        />
+      )}
+      {addHoldingMember && (
+        <AddHoldingModal
+          member={addHoldingMember}
+          onClose={() => setAddHoldingMember(null)}
+          onSuccess={() => setAddHoldingMember(null)}
+        />
+      )}
     </>
   );
 }

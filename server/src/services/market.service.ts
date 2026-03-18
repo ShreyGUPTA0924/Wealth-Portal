@@ -150,7 +150,7 @@ export async function getMutualFundNav(schemeCode: string): Promise<PriceResult>
   return result;
 }
 
-// ─── Crypto price (CoinGecko free API) ───────────────────────────────────────
+// ─── Crypto price (CoinGecko primary, Yahoo fallback) ──────────────────────────
 
 interface CoinGeckoResponse {
   [coinId: string]: { inr: number; inr_24h_change?: number };
@@ -162,32 +162,72 @@ const COIN_ALIASES: Record<string, string> = {
   DOGE: 'dogecoin', MATIC: 'matic-network', DOT: 'polkadot', SHIB: 'shiba-inu',
 };
 
+/** Yahoo Finance tickers for crypto (USD pairs) */
+const COIN_TO_YAHOO: Record<string, string> = {
+  bitcoin: 'BTC-USD', ethereum: 'ETH-USD', tether: 'USDT-USD',
+  binancecoin: 'BNB-USD', solana: 'SOL-USD', cardano: 'ADA-USD',
+  dogecoin: 'DOGE-USD', 'matic-network': 'MATIC-USD', polkadot: 'DOT-USD',
+  'shiba-inu': 'SHIB-USD',
+};
+
+async function getCryptoPriceViaYahoo(coinId: string, symbol: string): Promise<PriceResult> {
+  const yahooTicker = COIN_TO_YAHOO[coinId];
+  if (!yahooTicker) throw new Error(`No Yahoo ticker for: ${coinId}`);
+
+  const raw = await yahooFinance.quote(yahooTicker);
+  const q = asYFQuote(raw);
+  if (!q.regularMarketPrice) throw new Error(`Yahoo returned no price for: ${yahooTicker}`);
+
+  const usdInr = await getUsdInrRate();
+  const priceInr = q.regularMarketPrice * usdInr;
+
+  return {
+    symbol:           symbol.toUpperCase(),
+    name:             coinId.charAt(0).toUpperCase() + coinId.slice(1),
+    price:            Math.round(priceInr * 100) / 100,
+    dayChangePercent: q.regularMarketChangePercent ?? null,
+    dayChangeAbs:     q.regularMarketChange ?? null,
+    source:           'Yahoo Finance',
+    cachedAt:         now(),
+  };
+}
+
 export async function getCryptoPrice(symbol: string): Promise<PriceResult> {
   const coinId = COIN_ALIASES[symbol.toUpperCase()] ?? symbol.toLowerCase();
   const key = cacheKey.price('CRYPTO', coinId);
   const cached = await cacheGet<PriceResult>(key);
   if (cached) return cached;
 
-  const res = await axios.get<CoinGeckoResponse>(
-    'https://api.coingecko.com/api/v3/simple/price',
-    { params: { ids: coinId, vs_currencies: 'inr', include_24hr_change: 'true' }, timeout: 8_000 }
-  );
+  // Try CoinGecko first; fallback to Yahoo on 429 or failure
+  try {
+    const res = await axios.get<CoinGeckoResponse>(
+      'https://api.coingecko.com/api/v3/simple/price',
+      { params: { ids: coinId, vs_currencies: 'inr', include_24hr_change: 'true' }, timeout: 8_000 }
+    );
 
-  const data = res.data[coinId];
-  if (!data) throw new Error(`CoinGecko returned no data for: ${coinId}`);
+    const data = res.data[coinId];
+    if (!data) throw new Error(`CoinGecko returned no data for: ${coinId}`);
 
-  const result: PriceResult = {
-    symbol:           symbol.toUpperCase(),
-    name:             coinId.charAt(0).toUpperCase() + coinId.slice(1),
-    price:            data.inr,
-    dayChangePercent: data.inr_24h_change ?? null,
-    dayChangeAbs:     null,
-    source:           'CoinGecko',
-    cachedAt:         now(),
-  };
+    const result: PriceResult = {
+      symbol:           symbol.toUpperCase(),
+      name:             coinId.charAt(0).toUpperCase() + coinId.slice(1),
+      price:            data.inr,
+      dayChangePercent: data.inr_24h_change ?? null,
+      dayChangeAbs:     null,
+      source:           'CoinGecko',
+      cachedAt:         now(),
+    };
 
-  await cacheSet(key, result, TTL.CRYPTO);
-  return result;
+    await cacheSet(key, result, TTL.CRYPTO);
+    return result;
+  } catch (err) {
+    const is429 = axios.isAxiosError(err) && err.response?.status === 429;
+    if (!is429 && !COIN_TO_YAHOO[coinId]) throw err;
+
+    const result = await getCryptoPriceViaYahoo(coinId, symbol);
+    await cacheSet(key, result, TTL.CRYPTO);
+    return result;
+  }
 }
 
 // ─── Gold price (metals.live → converted to INR) ─────────────────────────────

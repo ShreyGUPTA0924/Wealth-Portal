@@ -246,6 +246,7 @@ export async function getMemberPortfolio(userId: string, memberId: string) {
           maturityDate: true,
           interestRate: true,
           brokerSource: true,
+          notes:        true,
           createdAt:    true,
         },
       },
@@ -307,6 +308,7 @@ export async function getMemberPortfolio(userId: string, memberId: string) {
         maturityDate:  h.maturityDate?.toISOString() ?? null,
         interestRate:  h.interestRate ? toNum(h.interestRate) : null,
         brokerSource:  h.brokerSource,
+        notes:         h.notes ?? null,
         createdAt:     h.createdAt.toISOString(),
       })),
       goals: portfolio.goals.map((g) => ({
@@ -324,4 +326,21 @@ export async function getMemberPortfolio(userId: string, memberId: string) {
       })),
     },
   };
+}
+
+export async function getMemberPortfolioId(userId: string, memberId: string): Promise<string> {
+  const member = await prisma.familyMember.findFirst({ where: { id: memberId, userId } });
+  if (!member) throw appError('Member not found', 404);
+  const portfolio = await prisma.portfolio.findFirst({ where: { familyMemberId: memberId } });
+  if (!portfolio) throw appError('Member portfolio not found', 404);
+  return portfolio.id;
+}
+
+export async function getMemberWithPortfolio(userId: string, memberId: string) {
+  const member = await prisma.familyMember.findFirst({
+    where:   { id: memberId, userId },
+    include: { portfolio: true },
+  });
+  if (!member) throw appError('Member not found', 404);
+  return member;
 }

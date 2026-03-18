@@ -131,6 +131,26 @@ export async function getMe(req: Request, res: Response): Promise<void> {
 }
 
 /**
+ * POST /api/auth/google
+ * Accepts a Google OAuth access token, verifies it, and returns JWT cookies.
+ * Works for both sign-up and sign-in (find-or-create).
+ */
+export async function googleAuth(req: Request, res: Response): Promise<void> {
+  try {
+    const { accessToken } = req.body as { accessToken?: string };
+    if (!accessToken) {
+      res.status(400).json({ success: false, error: 'accessToken is required' });
+      return;
+    }
+    const { user, tokens } = await AuthService.googleAuthUser(accessToken);
+    setAuthCookies(res, tokens);
+    res.status(200).json({ success: true, data: { user } });
+  } catch (err) {
+    handleError(res, err);
+  }
+}
+
+/**
  * POST /api/auth/2fa/setup  [protected]
  * Generates a TOTP secret, stores it (unverified), returns the otpauth URL.
  * The frontend renders this as a QR code using a library like qrcode.react.

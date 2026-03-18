@@ -29,12 +29,82 @@ const NAV_ITEMS = [
   { label: 'AI Advisor',  href: '/advisor',    icon: Bot },
   { label: 'Family',      href: '/family',     icon: Users },
   { label: 'Learn',       href: '/learn',      icon: BookOpen },
+  { label: 'Reminders',   href: '/reminders',  icon: Bell },
   { label: 'Reports',     href: '/reports',    icon: FileBarChart2 },
 ];
 
 const BOTTOM_NAV_ITEMS = [
   { label: 'Settings', href: '/settings', icon: Settings },
 ];
+
+// ─── Mobile Nav (Joby-style full-screen) ──────────────────────────────────────
+
+function MobileNavOverlay({ onClose }: { onClose: () => void }) {
+  const pathname = usePathname();
+  const router   = useRouter();
+  const { user, clearUser } = useAuthStore();
+
+  const handleLogout = () => {
+    clearUser();
+    onClose();
+    router.push('/login');
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col bg-gradient-to-br from-indigo-600 via-indigo-700 to-violet-800 lg:hidden">
+      <header className="flex items-center justify-between px-6 py-5">
+        <button onClick={onClose} className="flex items-center gap-2 text-white/90 hover:text-white transition-colors">
+          <div className="w-9 h-9 rounded-xl border-2 border-white/40 flex items-center justify-center bg-white/5">
+            <X className="w-5 h-5" />
+          </div>
+          <span className="text-sm font-semibold">Close</span>
+        </button>
+        <Link href="/dashboard" onClick={onClose} className="flex items-center gap-2.5">
+          <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-white font-bold text-base ring-2 ring-white/30">
+            W
+          </div>
+          <span className="text-lg font-bold text-white">WealthPortal</span>
+        </Link>
+        <Link href="/reports" onClick={onClose} className="flex items-center gap-1.5 text-white/90 hover:text-white text-sm font-semibold">
+          Reports <ChevronRight className="w-4 h-4 -rotate-90" />
+        </Link>
+      </header>
+
+      <div className="flex-1 flex flex-col md:flex-row px-6 pb-16 overflow-auto">
+        <div className="flex flex-col gap-6 py-6 md:py-16 md:w-1/3 order-2 md:order-1">
+          <div className="flex flex-col gap-3">
+            <Link href="/settings" onClick={onClose} className="text-white/80 hover:text-white text-sm font-medium transition-colors">
+              Settings
+            </Link>
+            <button onClick={handleLogout} className="text-left text-white/80 hover:text-white text-sm font-medium transition-colors">
+              Sign out
+            </button>
+          </div>
+          <div className="pt-4 border-t border-white/20">
+            <p className="text-xs text-white/60 mb-1">{user?.fullName ?? 'User'}</p>
+            <p className="text-xs text-white/50 truncate max-w-[200px]">{user?.email}</p>
+          </div>
+        </div>
+        <nav className="flex-1 flex flex-col justify-center md:justify-center md:items-end gap-2 py-8 md:py-0 order-1 md:order-2">
+          {NAV_ITEMS.map(({ label, href }) => {
+            const active = pathname === href || pathname.startsWith(href + '/');
+            return (
+              <Link
+                key={href}
+                href={href}
+                onClick={onClose}
+                className={`text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight transition-colors leading-tight
+                  ${active ? 'text-white' : 'text-white/75 hover:text-white'}`}
+              >
+                {label}
+              </Link>
+            );
+          })}
+        </nav>
+      </div>
+    </div>
+  );
+}
 
 // ─── Sidebar ─────────────────────────────────────────────────────────────────
 
@@ -49,21 +119,23 @@ function Sidebar({ onClose }: { onClose?: () => void }) {
   };
 
   return (
-    <aside className="flex flex-col h-full bg-background-card border-r border-border w-64 shrink-0 transition-colors duration-300">
-      {/* Logo */}
-      <div className="flex items-center justify-between px-6 py-5 border-b border-border">
-        <div className="flex items-center gap-2.5">
-          <div
-            className="w-8 h-8 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow bg-premium-gradient"
-          >
+    <aside className="flex flex-col h-full w-64 shrink-0 m-3 rounded-2xl overflow-hidden
+      bg-white/80 dark:bg-[#161618]/95 backdrop-blur-2xl
+      border border-black/5 dark:border-white/[0.08]
+      shadow-[0_0_0_1px_rgba(0,0,0,0.03),0_16px_48px_-12px_rgba(0,0,0,0.15)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.06),0_16px_48px_-12px_rgba(0,0,0,0.5)]
+      transition-all duration-300">
+      {/* Logo — visible in light & dark */}
+      <div className="flex items-center justify-between px-5 py-5 bg-gradient-to-b from-indigo-500/5 to-transparent dark:from-indigo-500/10 dark:to-transparent border-b border-black/5 dark:border-white/5">
+        <Link href="/dashboard" onClick={onClose} className="flex items-center gap-3 group">
+          <div className="nav-logo-icon w-10 h-10 rounded-xl flex items-center justify-center font-bold text-base ring-2 ring-white/30 dark:ring-white/20 group-hover:scale-105 transition-transform">
             W
           </div>
-          <span className="text-lg font-semibold text-foreground tracking-tight">
-            Wealth<span className="text-[#6366f1]">Portal</span>
+          <span className="text-lg font-bold tracking-tight text-gray-900 dark:text-white">
+            Wealth<span className="nav-logo-accent">Portal</span>
           </span>
-        </div>
+        </Link>
         {onClose && (
-          <button onClick={onClose} className="text-foreground-muted hover:text-foreground lg:hidden">
+          <button onClick={onClose} className="lg:hidden p-2.5 rounded-xl text-foreground-muted hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5 transition-all">
             <X className="w-5 h-5" />
           </button>
         )}
@@ -78,26 +150,28 @@ function Sidebar({ onClose }: { onClose?: () => void }) {
               key={href}
               href={href}
               onClick={onClose}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
-                          transition-all duration-150 group
-                          ${active
-                            ? 'bg-[#6366f1]/10 text-[#6366f1] dark:bg-[#6366f1]/20 dark:text-[#818cf8]'
-                            : 'text-foreground-muted hover:bg-border hover:text-foreground'
-                          }`}
+              className={`relative flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold
+                transition-all duration-200 group
+                ${active
+                  ? 'bg-gradient-to-r from-indigo-500/15 to-violet-500/10 dark:from-indigo-500/25 dark:to-violet-500/15 text-indigo-600 dark:text-indigo-300 shadow-sm'
+                  : 'text-foreground-muted hover:bg-black/5 dark:hover:bg-white/5 hover:text-foreground'
+                }`}
             >
-              <Icon
-                className={`w-4.5 h-4.5 shrink-0 ${active ? 'text-[#6366f1] dark:text-[#818cf8]' : 'text-foreground-muted group-hover:text-foreground'}`}
-                size={18}
-              />
-              {label}
-              {active && <ChevronRight className="w-3.5 h-3.5 ml-auto text-[#6366f1] dark:text-[#818cf8]" />}
+              {active && (
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-7 rounded-r-full bg-gradient-to-b from-indigo-500 to-violet-500" />
+              )}
+              <span className={`flex items-center justify-center w-9 h-9 rounded-lg shrink-0 transition-colors ${active ? 'bg-indigo-500/20 dark:bg-indigo-500/30' : 'bg-black/5 dark:bg-white/5 group-hover:bg-black/10 dark:group-hover:bg-white/10'}`}>
+                <Icon className={`w-5 h-5 ${active ? 'text-indigo-600 dark:text-indigo-400' : 'text-foreground-muted group-hover:text-foreground'}`} />
+              </span>
+              <span className="flex-1">{label}</span>
+              {active && <ChevronRight className="w-4 h-4 text-indigo-500/80" />}
             </Link>
           );
         })}
       </nav>
 
-      {/* Bottom nav (Settings) */}
-      <div className="px-3 pb-2 border-t border-border pt-3">
+      {/* Settings */}
+      <div className="px-3 pb-3 border-t border-black/5 dark:border-white/5 pt-3">
         {BOTTOM_NAV_ITEMS.map(({ label, href, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(href + '/');
           return (
@@ -105,37 +179,33 @@ function Sidebar({ onClose }: { onClose?: () => void }) {
               key={href}
               href={href}
               onClick={onClose}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
-                          transition-all duration-150 group
-                          ${active
-                            ? 'bg-[#6366f1]/10 text-[#6366f1] dark:bg-[#6366f1]/20 dark:text-[#818cf8]'
-                            : 'text-foreground-muted hover:bg-border hover:text-foreground'
-                          }`}
+              className={`relative flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 group
+                ${active ? 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-400' : 'text-foreground-muted hover:bg-black/5 dark:hover:bg-white/5 hover:text-foreground'}`}
             >
-              <Icon
-                className={`w-4.5 h-4.5 shrink-0 ${active ? 'text-[#6366f1] dark:text-[#818cf8]' : 'text-foreground-muted group-hover:text-foreground'}`}
-                size={18}
-              />
-              {label}
-              {active && <ChevronRight className="w-3.5 h-3.5 ml-auto text-[#6366f1] dark:text-[#818cf8]" />}
+              {active && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-7 rounded-r-full bg-gradient-to-b from-indigo-500 to-violet-500" />}
+              <span className={`flex items-center justify-center w-9 h-9 rounded-lg shrink-0 ${active ? 'bg-indigo-500/20' : 'bg-black/5 dark:bg-white/5 group-hover:bg-black/10 dark:group-hover:bg-white/10'}`}>
+                <Icon className={`w-5 h-5 ${active ? 'text-indigo-600 dark:text-indigo-400' : 'text-foreground-muted group-hover:text-foreground'}`} />
+              </span>
+              <span className="flex-1">{label}</span>
+              {active && <ChevronRight className="w-4 h-4 text-indigo-500/80" />}
             </Link>
           );
         })}
       </div>
 
-      {/* User + Logout */}
-      <div className="px-3 pb-4 pt-2 border-t border-border">
-        <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-border transition-colors">
-          <div className="w-8 h-8 rounded-full bg-premium-gradient flex items-center justify-center text-white text-xs font-bold shrink-0">
+      {/* User card */}
+      <div className="px-3 pb-5 pt-3 border-t border-black/5 dark:border-white/5">
+        <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-indigo-500/10 to-violet-500/5 dark:from-indigo-500/15 dark:to-violet-500/10 border border-indigo-500/10 dark:border-indigo-500/20 hover:from-indigo-500/15 hover:to-violet-500/10 transition-all duration-200">
+          <div className="nav-logo-icon w-10 h-10 rounded-xl flex items-center justify-center text-white text-sm font-bold shrink-0 ring-2 ring-white/30 dark:ring-white/20">
             {user?.fullName?.charAt(0)?.toUpperCase() ?? 'U'}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">{user?.fullName ?? 'User'}</p>
-            <p className="text-xs text-foreground-muted truncate">{user?.email}</p>
+            <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{user?.fullName ?? 'User'}</p>
+            <p className="text-xs text-gray-600 dark:text-gray-300 truncate">{user?.email}</p>
           </div>
           <button
             onClick={handleLogout}
-            className="text-foreground-muted hover:text-red-500 transition-colors shrink-0"
+            className="p-2 rounded-lg text-foreground-muted hover:text-red-500 hover:bg-red-500/10 transition-all shrink-0"
             title="Sign out"
           >
             <LogOut className="w-4 h-4" />
@@ -154,7 +224,6 @@ function TopBar({ onMenuClick }: { onMenuClick: () => void }) {
   const { user } = useAuthStore();
   const pathname = usePathname();
 
-  // Derive page title from path
   const title = (() => {
     for (const item of NAV_ITEMS) {
       if (pathname === item.href || pathname.startsWith(item.href + '/')) return item.label;
@@ -163,24 +232,30 @@ function TopBar({ onMenuClick }: { onMenuClick: () => void }) {
   })();
 
   return (
-    <header className="sticky top-0 z-30 h-16 bg-background-card/70 backdrop-blur-xl border-b border-border shadow-sm shadow-black/5 flex items-center justify-between px-4 lg:px-6 shrink-0 transition-all duration-300">
-      <div className="flex items-center gap-3">
+    <header className="sticky top-0 z-30 h-16 shrink-0 flex items-center justify-between px-4 lg:px-8
+      bg-white/70 dark:bg-[#0c0c0e]/90 backdrop-blur-2xl
+      border-b border-black/5 dark:border-white/5
+      shadow-[0_1px_0_0_rgba(0,0,0,0.03)] dark:shadow-[0_1px_0_0_rgba(255,255,255,0.04)]
+      transition-all duration-300">
+      <div className="flex items-center gap-4">
         <button
           onClick={onMenuClick}
-          className="lg:hidden text-foreground-muted hover:text-foreground transition-colors"
+          className="lg:hidden p-2.5 rounded-xl text-foreground-muted hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5 transition-all"
         >
           <Menu className="w-5 h-5" />
         </button>
-        <h1 className="text-lg font-bold text-foreground">{title}</h1>
+        <h1 className="text-lg font-bold tracking-tight nav-logo-text">
+          <span className="nav-logo-accent">{title}</span>
+        </h1>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         <ThemeToggle />
-        <button className="relative w-9 h-9 flex items-center justify-center rounded-xl text-foreground-muted hover:bg-border transition-colors">
-          <Bell className="w-4.5 h-4.5" size={18} />
-          <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-red-500 rounded-full" />
+        <button className="relative w-10 h-10 flex items-center justify-center rounded-xl text-foreground-muted hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5 transition-all">
+          <Bell className="w-5 h-5" />
+          <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white dark:ring-[#0c0c0e]" />
         </button>
-        <div className="w-9 h-9 rounded-full bg-premium-gradient flex items-center justify-center text-white text-xs font-bold shadow-md shadow-brand/20">
+        <div className="nav-logo-icon w-10 h-10 rounded-xl flex items-center justify-center text-white text-sm font-bold shrink-0 ring-2 ring-white/30 dark:ring-white/20">
           {user?.fullName?.charAt(0)?.toUpperCase() ?? 'U'}
         </div>
       </div>
@@ -212,27 +287,17 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
   if (!isAuthenticated) return null;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
-      {/* Desktop sidebar */}
-      <div className="hidden lg:flex">
+    <div className="flex h-screen overflow-hidden bg-[#f8f9fa] dark:bg-[#050506]">
+      {/* Desktop sidebar — floating glass panel */}
+      <div className="hidden lg:flex shrink-0 pt-4 pl-4 pb-4">
         <Sidebar />
       </div>
 
-      {/* Mobile sidebar overlay */}
-      {sidebarOpen && (
-        <div className="lg:hidden fixed inset-0 z-40 flex">
-          <div
-            className="fixed inset-0 bg-black/40 backdrop-blur-sm"
-            onClick={() => setSidebarOpen(false)}
-          />
-          <div className="relative z-50">
-            <Sidebar onClose={() => setSidebarOpen(false)} />
-          </div>
-        </div>
-      )}
+      {/* Mobile nav — Joby-style full-screen */}
+      {sidebarOpen && <MobileNavOverlay onClose={() => setSidebarOpen(false)} />}
 
       {/* Main content */}
-      <div className="flex-1 relative overflow-y-auto bg-background">
+      <div className="flex-1 relative overflow-y-auto bg-background min-w-0">
         <TopBar onMenuClick={() => setSidebarOpen(true)} />
         <main className="max-w-[1400px] mx-auto p-4 lg:p-8 lg:pt-10 min-h-[calc(100vh-4rem)]">
           {children}

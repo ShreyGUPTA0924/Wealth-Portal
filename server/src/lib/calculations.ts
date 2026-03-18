@@ -83,6 +83,20 @@ export function newAvgBuyPrice(
   return (existingQty * existingAvg + addedQty * addedPrice) / total;
 }
 
+/**
+ * Compute current value for fixed-income assets (PPF, FD, RD, EPF) using compound interest.
+ * Formula: A = P * (1 + r/100)^t
+ */
+export function compoundInterestValue(
+  principal: number,
+  ratePerAnnum: number,
+  years: number
+): number {
+  if (principal <= 0) return 0;
+  if (years <= 0) return principal;
+  return principal * Math.pow(1 + ratePerAnnum / 100, years);
+}
+
 // ─── INR formatting helper (server-side) ─────────────────────────────────────
 
 export function formatInr(amount: number): string {

@@ -76,6 +76,17 @@ enum ChecklistCategory {
   EMI
   SUBSCRIPTION
   OTHER
+  ELECTRICITY
+  WATER
+  INTERNET
+  MOBILE
+  CREDIT_CARD
+  EMI_HOME_LOAN
+  EMI_CAR_LOAN
+  EMI_PERSONAL_LOAN
+  INSURANCE
+  DOMESTIC_HELP
+  MAINTENANCE
 }
 
 enum NudgeType {
@@ -131,7 +142,8 @@ enum NotificationChannel {
 model User {
   id                   String    @id @default(uuid())
   email                String    @unique
-  passwordHash         String
+  passwordHash         String?
+  googleId             String?   @unique
   fullName             String
   dateOfBirth          DateTime?
   city                 String?

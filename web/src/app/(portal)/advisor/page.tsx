@@ -448,6 +448,10 @@ export default function AdvisorPage() {
         }
       );
 
+      if (!resp.ok) {
+        const errData = await resp.json().catch(() => ({}));
+        throw new Error((errData as { message?: string }).message ?? `Request failed (${resp.status})`);
+      }
       if (!resp.body) throw new Error('No stream');
 
       const reader  = resp.body.getReader();
@@ -505,10 +509,11 @@ export default function AdvisorPage() {
       }
     } catch (err) {
       if ((err as Error).name !== 'AbortError') {
+        const msg = (err as Error).message || 'Sorry, something went wrong. Please try again.';
         const errMsg: ChatMessage = {
           id: `err-${Date.now()}`,
           role: 'ASSISTANT',
-          content: 'Sorry, something went wrong. Please try again.',
+          content: msg,
           createdAt: new Date().toISOString(),
         };
         setMessages((prev) => [...prev, errMsg]);

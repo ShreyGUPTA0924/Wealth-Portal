@@ -55,6 +55,8 @@ router.post(
   AuthController.login
 );
 
+router.post('/google', authLimiter, AuthController.googleAuth);
+
 router.post('/refresh', AuthController.refresh);
 
 router.post('/logout', AuthController.logout);

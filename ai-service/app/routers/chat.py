@@ -1,4 +1,4 @@
-﻿import os
+import os
 import json
 from typing import Optional
 from fastapi import APIRouter
@@ -27,7 +27,7 @@ class ChatRequest(BaseModel):
 
 @router.post("/chat")
 async def chat_endpoint(request: ChatRequest):
-    portfolio = request.user_context.get("portfolio") if request.user_context else None
+    portfolio = request.user_context.get("portfolio") if request.user_context and isinstance(request.user_context, dict) else None
     goals = request.user_context.get("goals", []) if request.user_context else []
     risk = request.user_context.get("risk_profile", "MODERATE") if request.user_context else "MODERATE"
 

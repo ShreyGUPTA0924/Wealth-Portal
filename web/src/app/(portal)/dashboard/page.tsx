@@ -39,12 +39,18 @@ interface DashboardData {
     }[];
     totalItems: number; paidItems: number;
   };
+  upcomingBills: Array<{
+    id: string; label: string; category: string; amount: number | null;
+    dueDayOfMonth: number; isPaid: boolean; paidAt: string | null;
+    daysUntilDue: number; isOverdue: boolean;
+  }>;
   aiInsights: string[];
 }
 
 interface NetWorthHistory {
   period: string;
   dataPoints: { date: string; value: number }[];
+  isPlaceholder?: boolean;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -184,10 +190,11 @@ function NetWorthSection({ data }: { data: DashboardData }) {
     '1Y':  data.netWorth.change.oneYear,
   }[period] ?? 0;
 
-  const rawPoints  = historyData?.dataPoints ?? [];
-  const chartData  = rawPoints.length > 0
+  const rawPoints   = historyData?.dataPoints ?? [];
+  const isPlaceholder = historyData?.isPlaceholder ?? false;
+  const chartData   = rawPoints.length > 0
     ? rawPoints
-    : generateFallbackHistory(data.netWorth.current ?? 0, period === '1Y' ? 365 : 30);
+    : generateFallbackHistory(Math.max(data.netWorth.current ?? 0, 1), period === '1Y' ? 365 : 30);
 
   const bestPerformer = [...(data.topGainers ?? [])].sort((a, b) => b.pnlPercent - a.pnlPercent)[0];
   const stats = [
@@ -258,7 +265,12 @@ function NetWorthSection({ data }: { data: DashboardData }) {
         ))}
       </div>
 
-      <div className="mt-6 flex-1 min-h-[200px]" style={{ height: 280 }}>
+      <div className="mt-6 flex-1 min-h-[200px] relative" style={{ height: 280 }}>
+        {isPlaceholder && (
+          <p className="absolute top-0 right-0 text-[10px] text-foreground-muted/70 z-10">
+            Sample trend — add holdings to see your net worth
+          </p>
+        )}
         {chartData.length === 0 ? (
           <Skeleton className="h-full w-full" />
         ) : (
@@ -288,6 +300,7 @@ function NetWorthSection({ data }: { data: DashboardData }) {
                 axisLine={false}
                 width={50}
                 dx={-10}
+                domain={[0, (dataMax: number) => Math.max(dataMax ?? 0, 1)]}
               />
               <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'rgba(168, 85, 247, 0.2)', strokeWidth: 2, strokeDasharray: '4 4' }} />
               <Area
@@ -474,25 +487,30 @@ function AiInsightsSection({ insights }: { insights: string[] }) {
   );
 }
 
-// ─── Checklist ────────────────────────────────────────────────────────────────
+// ─── Checklist (Bill Reminders) ───────────────────────────────────────────────
 
-function ChecklistSection({ checklist }: { checklist: DashboardData['checklist'] }) {
+function ChecklistSection({ checklist, upcomingBills }: { checklist: DashboardData['checklist']; upcomingBills: DashboardData['upcomingBills'] }) {
   const queryClient = useQueryClient();
 
   const toggleMutation = useMutation({
     mutationFn: ({ templateId, isPaid }: { templateId: string; isPaid: boolean }) =>
       apiClient.post(`/api/dashboard/checklist/${templateId}/toggle`, { isPaid }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['reminders'] });
+      queryClient.invalidateQueries({ queryKey: ['reminders-upcoming'] });
+    },
   });
 
-  const { totalItems, paidItems, items } = checklist;
+  const { totalItems, paidItems } = checklist;
   const pct = totalItems > 0 ? Math.round((paidItems / totalItems) * 100) : 0;
+  const displayItems = upcomingBills.length > 0 ? upcomingBills.slice(0, 3) : [];
 
   return (
     <Card className="p-6 h-full">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-sm font-bold text-foreground">Daily Checklist</h3>
+          <h3 className="text-sm font-bold text-foreground">Bill Reminders</h3>
           <p className="text-xs text-foreground-muted font-medium mt-1">{paidItems} of {totalItems} paid this month</p>
         </div>
         <div className="flex items-center gap-3">
@@ -508,39 +526,60 @@ function ChecklistSection({ checklist }: { checklist: DashboardData['checklist']
         </div>
       </div>
 
-      {items.length === 0 ? (
+      {displayItems.length === 0 ? (
         <div className="text-center py-8 text-foreground-muted">
           <CheckCircle2 className="w-10 h-10 mx-auto mb-3 text-gray-200" />
           <p className="text-sm font-medium">All caught up!</p>
+          <Link href="/reminders" className="text-xs font-semibold text-brand hover:text-brand-dark mt-2 inline-block">
+            View all reminders →
+          </Link>
         </div>
       ) : (
-        <ul className="space-y-3">
-          {items.map((item) => (
-            <li key={item.templateId} className="flex items-center justify-between gap-3 p-3 rounded-2xl bg-background-card/50 hover:bg-background-card/80 border border-transparent hover:border-white/60 transition-all duration-300 group">
-              <div className="flex items-center gap-3 min-w-0">
-                <button
-                  onClick={() => toggleMutation.mutate({ templateId: item.templateId, isPaid: !item.isPaid })}
-                  disabled={toggleMutation.isPending}
-                  className="shrink-0 transition-transform active:scale-90"
-                >
-                  {item.isPaid
-                    ? <CheckCircle2 className="w-6 h-6 text-brand" />
-                    : <Circle className="w-6 h-6 text-gray-300 group-hover:text-brand transition-colors" />
-                  }
-                </button>
-                <div className="min-w-0">
-                  <p className={`text-sm font-semibold truncate transition-colors ${item.isPaid ? 'line-through text-foreground-muted' : 'text-foreground'}`}>
-                    {item.label}
-                  </p>
-                  <p className="text-xs text-foreground-muted font-medium mt-0.5">Due {item.dueDayOfMonth}th · {item.category}</p>
+        <>
+          <ul className="space-y-3">
+            {displayItems.map((item) => (
+              <li
+                key={item.id}
+                className={`flex items-center justify-between gap-3 p-3 rounded-2xl border border-transparent hover:border-white/60 transition-all duration-300 group ${
+                  item.isOverdue ? 'bg-red-50/50 border-red-100' : 'bg-background-card/50 hover:bg-background-card/80'
+                }`}
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <button
+                    onClick={() => toggleMutation.mutate({ templateId: item.id, isPaid: !item.isPaid })}
+                    disabled={toggleMutation.isPending}
+                    className="shrink-0 transition-transform active:scale-90"
+                  >
+                    {item.isPaid
+                      ? <CheckCircle2 className="w-6 h-6 text-brand" />
+                      : <Circle className="w-6 h-6 text-gray-300 group-hover:text-brand transition-colors" />
+                    }
+                  </button>
+                  <div className="min-w-0">
+                    <p className={`text-sm font-semibold truncate transition-colors ${item.isPaid ? 'line-through text-foreground-muted' : 'text-foreground'}`}>
+                      {item.label}
+                    </p>
+                    <p className="text-xs text-foreground-muted font-medium mt-0.5">
+                      Due {item.dueDayOfMonth}th · {item.category}
+                      {item.isOverdue && !item.isPaid && (
+                        <span className="text-red-500 font-medium ml-1">· {Math.abs(item.daysUntilDue)}d overdue</span>
+                      )}
+                    </p>
+                  </div>
                 </div>
-              </div>
-              <span className={`text-sm font-bold shrink-0 ${item.isPaid ? 'text-foreground-muted' : 'text-foreground'}`}>
-                {item.amount ? formatInr(item.amount) : '—'}
-              </span>
-            </li>
-          ))}
-        </ul>
+                <span className={`text-sm font-bold shrink-0 ${item.isPaid ? 'text-foreground-muted' : item.isOverdue ? 'text-red-500' : 'text-foreground'}`}>
+                  {item.amount ? formatInr(item.amount) : '—'}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <Link
+            href="/reminders"
+            className="mt-4 text-xs font-semibold text-brand hover:text-brand-dark flex items-center gap-1 transition-colors"
+          >
+            View all reminders <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </>
       )}
     </Card>
   );
@@ -773,7 +812,7 @@ export default function DashboardPage() {
            <RecentTxnsSection txns={data.recentTransactions} />
          </BentoItem>
          <BentoItem className="md:col-span-3 xl:col-span-2">
-           <ChecklistSection checklist={data.checklist} />
+           <ChecklistSection checklist={data.checklist} upcomingBills={data.upcomingBills} />
          </BentoItem>
          <BentoItem className="md:col-span-3 xl:col-span-2">
            <RemindersSection reminders={data.upcomingReminders} />

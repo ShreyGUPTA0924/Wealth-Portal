@@ -20,30 +20,31 @@ function wrap(fn: (req: Request, res: Response) => Promise<void>) {
 }
 
 async function buildUserContext(userId: string) {
-  const [portfolioSummary, goals, user] = await Promise.all([
-    getPortfolioSummary(userId).catch(() => null),
-    getGoals(userId).catch(() => []),
-    prisma.user.findUnique({
-      where: { id: userId },
-      select: { riskProfile: true, fullName: true },
-    }),
-  ]);
+  try {
+    const [portfolioSummary, goals, user] = await Promise.all([
+      getPortfolioSummary(userId).catch(() => null),
+      getGoals(userId).catch(() => []),
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: { riskProfile: true, fullName: true },
+      }),
+    ]);
 
-  const threeMonthsAgo = new Date();
-  threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
 
-  const checklistHistory = await prisma.checklistEntry.findMany({
-    where: {
-      userId,
-      monthYear: { gte: threeMonthsAgo },
-    },
-    include: {
-      template: { select: { label: true, category: true, amount: true } },
-    },
-    orderBy: { monthYear: 'desc' },
-  });
+    const checklistHistory = await prisma.checklistEntry.findMany({
+      where: {
+        userId,
+        monthYear: { gte: threeMonthsAgo },
+      },
+      include: {
+        template: { select: { label: true, category: true, amount: true } },
+      },
+      orderBy: { monthYear: 'desc' },
+    }).catch(() => []);
 
-  return {
+    return {
     portfolio: portfolioSummary,
     goals: goals.map((g) => ({
       id: g.id,
@@ -56,14 +57,19 @@ async function buildUserContext(userId: string) {
       targetDate: g.targetDate,
     })),
     risk_profile: user?.riskProfile ?? 'MODERATE',
-    checklist_history: checklistHistory.map((e) => ({
-      label: e.template.label,
-      category: e.template.category,
-      amount: e.template.amount ? Number(e.template.amount) : null,
-      monthYear: e.monthYear,
-      isPaid: e.isPaid,
-    })),
+    checklist_history: checklistHistory
+      .filter((e) => e.template)
+      .map((e) => ({
+        label: e.template!.label,
+        category: e.template!.category,
+        amount: e.template!.amount ? Number(e.template!.amount) : null,
+        monthYear: e.monthYear,
+        isPaid: e.isPaid,
+      })),
   };
+  } catch {
+    return { portfolio: null, goals: [], risk_profile: 'MODERATE', checklist_history: [] };
+  }
 }
 
 // ─── Chat Sessions ─────────────────────────────────────────────────────────────
@@ -216,10 +222,10 @@ export const chat = wrap(async (req, res) => {
       (aiResponse.data as NodeJS.ReadableStream).on('error', reject);
     });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : 'AI service unavailable';
-    res.write(`data: ${JSON.stringify({ error: msg })}\n\n`);
+    res.write(`data: ${JSON.stringify({ error: 'AI service unavailable' })}\n\n`);
     res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
-    assistantContent = 'Sorry, I could not connect to the AI service right now. Please try again.';
+    assistantContent =
+      'The AI advisor is temporarily unavailable. Please start the ai-service (see README) and try again.';
   }
 
   // Save assistant response

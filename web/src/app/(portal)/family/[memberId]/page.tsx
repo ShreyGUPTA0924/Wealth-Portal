@@ -1,13 +1,15 @@
 'use client';
 
+import { useState } from 'react';
 import { useParams } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeft, Lock, TrendingUp, TrendingDown, AlertCircle,
-  Target, Shield, Calendar, Wallet,
+  Target, Shield, Calendar, Wallet, Plus, Pencil, Trash2, Loader2, X,
 } from 'lucide-react';
 import Link from 'next/link';
 import apiClient from '@/lib/api-client';
+import { AddHoldingModal } from '@/components/family/AddHoldingModal';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -41,6 +43,7 @@ interface Holding {
   maturityDate:  string | null;
   interestRate:  number | null;
   brokerSource:  string;
+  notes:         string | null;
   createdAt:     string;
 }
 
@@ -153,7 +156,15 @@ const MINOR_SCHEMES = [
 
 // ─── Holdings Table ───────────────────────────────────────────────────────────
 
-function HoldingsTable({ holdings }: { holdings: Holding[] }) {
+interface HoldingsTableProps {
+  holdings: Holding[];
+  isMinor: boolean;
+  onEdit: (h: Holding) => void;
+  onDelete: (h: Holding) => void;
+  onAddTransaction: (h: Holding) => void;
+}
+
+function HoldingsTable({ holdings, isMinor, onEdit, onDelete, onAddTransaction }: HoldingsTableProps) {
   if (holdings.length === 0) {
     return (
       <div className="py-10 text-center text-foreground-muted">
@@ -163,12 +174,15 @@ function HoldingsTable({ holdings }: { holdings: Holding[] }) {
     );
   }
 
+  const cols = ['Asset', 'Type', 'Invested', 'Current Value', 'P&L', 'P&L %'];
+  if (!isMinor) cols.push('Actions');
+
   return (
     <div className="overflow-x-auto -mx-1">
       <table className="w-full text-sm min-w-[600px]">
         <thead>
           <tr className="border-b border-border">
-            {['Asset', 'Type', 'Invested', 'Current Value', 'P&L', 'P&L %'].map((h) => (
+            {cols.map((h) => (
               <th key={h} className="text-left text-xs font-medium text-foreground-muted uppercase tracking-wide py-2.5 px-2 first:pl-0">
                 {h}
               </th>
@@ -199,6 +213,33 @@ function HoldingsTable({ holdings }: { holdings: Holding[] }) {
                   ? `${h.pnlPercent >= 0 ? '+' : ''}${h.pnlPercent.toFixed(2)}%`
                   : '—'}
               </td>
+              {!isMinor && (
+                <td className="py-3 px-2">
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => onEdit(h)}
+                      className="p-1.5 rounded-lg text-foreground-muted hover:text-foreground hover:bg-border/50 transition-colors"
+                      title="Edit holding"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => onDelete(h)}
+                      className="p-1.5 rounded-lg text-foreground-muted hover:text-red-500 hover:bg-red-50 transition-colors"
+                      title="Delete holding"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => onAddTransaction(h)}
+                      className="p-1.5 rounded-lg text-foreground-muted hover:text-[#3C3489] hover:bg-[#3C3489]/10 transition-colors flex items-center gap-1 text-xs font-medium"
+                      title="Add transaction"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Txn
+                    </button>
+                  </div>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
@@ -292,6 +333,303 @@ function AllowanceTracker({ monthlyAllowance }: { monthlyAllowance: number }) {
   );
 }
 
+// ─── Edit Holding Modal ───────────────────────────────────────────────────────
+
+function EditHoldingModal({
+  holding,
+  memberId,
+  onClose,
+  onSuccess,
+}: {
+  holding: Holding;
+  memberId: string;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const queryClient = useQueryClient();
+  const [form, setForm] = useState({
+    notes: holding.notes ?? '',
+    manualPrice: holding.currentPrice?.toString() ?? '',
+    quantity: holding.quantity.toString(),
+  });
+
+  const mutation = useMutation({
+    mutationFn: () => {
+      const payload: Record<string, unknown> = {};
+      if (form.notes !== (holding.notes ?? '')) payload.notes = form.notes;
+      if (form.manualPrice) payload.manualPrice = parseFloat(form.manualPrice);
+      if (form.quantity) payload.quantity = parseFloat(form.quantity);
+      return apiClient.patch(`/api/family/members/${memberId}/holdings/${holding.id}`, payload);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['family'] });
+      queryClient.invalidateQueries({ queryKey: ['family-member', memberId] });
+      onSuccess();
+      onClose();
+    },
+  });
+
+  const inputClass =
+    'block w-full px-3.5 py-2.5 border border-border rounded-xl text-sm text-foreground bg-background-card focus:outline-none focus:ring-2 focus:ring-[#3C3489]/20 focus:border-[#3C3489]';
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative bg-background-card rounded-2xl shadow-2xl w-full max-w-md p-6">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-lg font-semibold text-foreground">Edit {holding.name}</h2>
+          <button onClick={onClose} className="text-foreground-muted hover:text-foreground transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-foreground-muted uppercase tracking-wide mb-1.5">Notes</label>
+            <input
+              value={form.notes}
+              onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+              className={inputClass}
+              placeholder="Optional notes"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-foreground-muted uppercase tracking-wide mb-1.5">Manual Price (₹)</label>
+            <input
+              type="number"
+              step="any"
+              value={form.manualPrice}
+              onChange={(e) => setForm((f) => ({ ...f, manualPrice: e.target.value }))}
+              className={inputClass}
+              placeholder="Override current price"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-foreground-muted uppercase tracking-wide mb-1.5">Quantity</label>
+            <input
+              type="number"
+              step="any"
+              value={form.quantity}
+              onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))}
+              className={inputClass}
+            />
+          </div>
+          {mutation.isError && (
+            <p className="text-sm text-red-500">Failed to update. Please try again.</p>
+          )}
+          <div className="flex gap-3 pt-2">
+            <button
+              onClick={onClose}
+              className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm text-foreground-muted hover:bg-border/50 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => mutation.mutate()}
+              disabled={mutation.isPending}
+              className="flex-1 px-4 py-2.5 rounded-xl bg-[#3C3489] text-white text-sm font-medium hover:bg-[#2d2871] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {mutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+              Save
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Add Transaction Modal ───────────────────────────────────────────────────
+
+function AddTransactionModal({
+  holding,
+  memberId,
+  onClose,
+  onSuccess,
+}: {
+  holding: Holding;
+  memberId: string;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const queryClient = useQueryClient();
+  const [form, setForm] = useState({
+    type: 'BUY' as 'BUY' | 'SELL' | 'SIP' | 'DIVIDEND',
+    quantity: '',
+    pricePerUnit: '',
+    date: new Date().toISOString().split('T')[0] ?? '',
+    notes: '',
+  });
+
+  const mutation = useMutation({
+    mutationFn: () =>
+      apiClient.post(`/api/family/members/${memberId}/holdings/${holding.id}/transactions`, {
+        type: form.type,
+        quantity: parseFloat(form.quantity),
+        pricePerUnit: parseFloat(form.pricePerUnit),
+        date: form.date,
+        notes: form.notes || undefined,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['family'] });
+      queryClient.invalidateQueries({ queryKey: ['family-member', memberId] });
+      onSuccess();
+      onClose();
+    },
+  });
+
+  const inputClass =
+    'block w-full px-3.5 py-2.5 border border-border rounded-xl text-sm text-foreground bg-background-card focus:outline-none focus:ring-2 focus:ring-[#3C3489]/20 focus:border-[#3C3489]';
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative bg-background-card rounded-2xl shadow-2xl w-full max-w-md p-6">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-lg font-semibold text-foreground">Add Transaction — {holding.name}</h2>
+          <button onClick={onClose} className="text-foreground-muted hover:text-foreground transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-foreground-muted uppercase tracking-wide mb-1.5">Type</label>
+            <select
+              value={form.type}
+              onChange={(e) => setForm((f) => ({ ...f, type: e.target.value as 'BUY' | 'SELL' | 'SIP' | 'DIVIDEND' }))}
+              className={inputClass}
+            >
+              <option value="BUY">BUY</option>
+              <option value="SELL">SELL</option>
+              <option value="SIP">SIP</option>
+              <option value="DIVIDEND">DIVIDEND</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-foreground-muted uppercase tracking-wide mb-1.5">Quantity</label>
+            <input
+              type="number"
+              step="any"
+              value={form.quantity}
+              onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))}
+              className={inputClass}
+              placeholder="e.g. 10"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-foreground-muted uppercase tracking-wide mb-1.5">Price per Unit (₹)</label>
+            <input
+              type="number"
+              step="any"
+              value={form.pricePerUnit}
+              onChange={(e) => setForm((f) => ({ ...f, pricePerUnit: e.target.value }))}
+              className={inputClass}
+              placeholder="e.g. 1999"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-foreground-muted uppercase tracking-wide mb-1.5">Date</label>
+            <input
+              type="date"
+              value={form.date}
+              onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
+              className={inputClass}
+              max={new Date().toISOString().split('T')[0]}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-foreground-muted uppercase tracking-wide mb-1.5">Notes (optional)</label>
+            <input
+              value={form.notes}
+              onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+              className={inputClass}
+              placeholder="Optional"
+            />
+          </div>
+          {mutation.isError && (
+            <p className="text-sm text-red-500">Failed to add transaction. Please try again.</p>
+          )}
+          <div className="flex gap-3 pt-2">
+            <button
+              onClick={onClose}
+              className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm text-foreground-muted hover:bg-border/50 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => mutation.mutate()}
+              disabled={
+                !form.quantity ||
+                !form.pricePerUnit ||
+                !form.date ||
+                mutation.isPending
+              }
+              className="flex-1 px-4 py-2.5 rounded-xl bg-[#3C3489] text-white text-sm font-medium hover:bg-[#2d2871] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {mutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+              Add Transaction
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Delete Holding Confirm ───────────────────────────────────────────────────
+
+function DeleteHoldingConfirm({
+  holding,
+  memberId,
+  onClose,
+  onConfirm,
+}: {
+  holding: Holding;
+  memberId: string;
+  onClose: () => void;
+  onConfirm: () => void;
+}) {
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: () => apiClient.delete(`/api/family/members/${memberId}/holdings/${holding.id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['family'] });
+      queryClient.invalidateQueries({ queryKey: ['family-member', memberId] });
+      onConfirm();
+      onClose();
+    },
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative bg-background-card rounded-2xl shadow-2xl w-full max-w-md p-6">
+        <h2 className="text-lg font-semibold text-foreground mb-2">Remove {holding.name}?</h2>
+        <p className="text-sm text-foreground-muted mb-6">This holding will be removed from the portfolio.</p>
+        {mutation.isError && (
+          <p className="text-sm text-red-500 mb-4">Failed to delete. Please try again.</p>
+        )}
+        <div className="flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm text-foreground-muted hover:bg-border/50 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => mutation.mutate()}
+            disabled={mutation.isPending}
+            className="flex-1 px-4 py-2.5 rounded-xl bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            {mutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+            Remove
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Loading Skeleton ─────────────────────────────────────────────────────────
 
 function MemberPageSkeleton() {
@@ -311,6 +649,11 @@ function MemberPageSkeleton() {
 export default function MemberPortfolioPage() {
   const params    = useParams();
   const memberId  = params['memberId'] as string;
+
+  const [editHolding, setEditHolding] = useState<Holding | null>(null);
+  const [deleteHolding, setDeleteHolding] = useState<Holding | null>(null);
+  const [addTransactionHolding, setAddTransactionHolding] = useState<Holding | null>(null);
+  const [showAddHolding, setShowAddHolding] = useState(false);
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['family-member', memberId],
@@ -383,6 +726,14 @@ export default function MemberPortfolioPage() {
               </div>
             </div>
           </div>
+          {!isMinor && (
+            <button
+              onClick={() => setShowAddHolding(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#3C3489] text-white text-sm font-medium hover:bg-[#2d2871] transition-colors shrink-0"
+            >
+              <Plus className="w-4 h-4" /> Add Holding
+            </button>
+          )}
         </div>
       </div>
 
@@ -443,7 +794,13 @@ export default function MemberPortfolioPage() {
             </span>
           )}
         </div>
-        <HoldingsTable holdings={portfolio.holdings} />
+        <HoldingsTable
+          holdings={portfolio.holdings}
+          isMinor={isMinor}
+          onEdit={setEditHolding}
+          onDelete={setDeleteHolding}
+          onAddTransaction={setAddTransactionHolding}
+        />
       </div>
 
       {/* Minor Schemes (only for minors) */}
@@ -473,6 +830,39 @@ export default function MemberPortfolioPage() {
             ))}
           </div>
         </div>
+      )}
+
+      {/* Modals */}
+      {showAddHolding && (
+        <AddHoldingModal
+          member={{ id: memberId, fullName: member.fullName, isMinor: member.isMinor }}
+          onClose={() => setShowAddHolding(false)}
+          onSuccess={() => setShowAddHolding(false)}
+        />
+      )}
+      {editHolding && (
+        <EditHoldingModal
+          holding={editHolding}
+          memberId={memberId}
+          onClose={() => setEditHolding(null)}
+          onSuccess={() => setEditHolding(null)}
+        />
+      )}
+      {deleteHolding && (
+        <DeleteHoldingConfirm
+          holding={deleteHolding}
+          memberId={memberId}
+          onClose={() => setDeleteHolding(null)}
+          onConfirm={() => setDeleteHolding(null)}
+        />
+      )}
+      {addTransactionHolding && (
+        <AddTransactionModal
+          holding={addTransactionHolding}
+          memberId={memberId}
+          onClose={() => setAddTransactionHolding(null)}
+          onSuccess={() => setAddTransactionHolding(null)}
+        />
       )}
 
       {/* Goals */}

@@ -1,6 +1,8 @@
 import cron from 'node-cron';
 import { prisma } from '../lib/prisma';
+import { compoundInterestValue } from '../lib/calculations';
 import { getPrice, type AssetClass } from '../services/market.service';
+import { computeXirr } from '../services/holdings.service';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -11,6 +13,81 @@ interface HoldingRow {
   symbol:        string | null;
   quantity:      { toString(): string };
   totalInvested: { toString(): string };
+}
+
+// Default interest rates (p.a.) for fixed-income when not specified
+const DEFAULT_RATES: Record<string, number> = {
+  PPF:  7.1,
+  FD:   7.0,
+  RD:   7.0,
+  EPF:  8.15,
+  NPS:  9.0,
+};
+
+async function syncFixedIncomeValues(): Promise<void> {
+  const fixedHoldings = await prisma.holding.findMany({
+    where: {
+      isActive: true,
+      assetClass: { in: ['PPF', 'FD', 'RD', 'EPF', 'NPS'] },
+    },
+    select: {
+      id: true, portfolioId: true, totalInvested: true, interestRate: true,
+      firstBuyDate: true, assetClass: true,
+    },
+  });
+
+  for (const h of fixedHoldings) {
+    try {
+      const totalInvested = parseFloat(h.totalInvested.toString());
+      const rate = h.interestRate
+        ? parseFloat(h.interestRate.toString())
+        : (DEFAULT_RATES[h.assetClass] ?? 7);
+      const startDate = h.firstBuyDate ?? new Date();
+      const years = (Date.now() - startDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000);
+
+      const currentValue = compoundInterestValue(totalInvested, rate, Math.max(0, years));
+      const pnlAbsolute = currentValue - totalInvested;
+      const pnlPercent = totalInvested > 0
+        ? Math.max(-9999.9999, Math.min(9999.9999, (pnlAbsolute / totalInvested) * 100))
+        : 0;
+
+      await prisma.holding.update({
+        where: { id: h.id },
+        data: {
+          currentValue,
+          pnlAbsolute,
+          pnlPercent,
+        },
+      });
+
+      const xirrVal = await computeXirr(h.id, currentValue);
+      if (xirrVal !== null) {
+        await prisma.holding.update({
+          where: { id: h.id },
+          data: { xirr: xirrVal },
+        });
+      }
+    } catch (err) {
+      console.warn(`[PriceSync] Failed to sync fixed-income ${h.assetClass} ${h.id}:`, (err as Error).message);
+    }
+  }
+
+  if (fixedHoldings.length > 0) {
+    const portfolioIds = [...new Set(fixedHoldings.map((x) => x.portfolioId))];
+    for (const pid of portfolioIds) {
+      const agg = await prisma.holding.aggregate({
+        where: { portfolioId: pid, isActive: true },
+        _sum: { currentValue: true, totalInvested: true },
+      });
+      await prisma.portfolio.update({
+        where: { id: pid },
+        data: {
+          currentValue: agg._sum.currentValue ?? 0,
+          totalInvested: agg._sum.totalInvested ?? 0,
+        },
+      });
+    }
+  }
 }
 
 // ─── Core sync logic ──────────────────────────────────────────────────────────
@@ -65,9 +142,11 @@ async function syncPrices(): Promise<void> {
                 const totalInvested = parseFloat(h.totalInvested.toString());
                 const currentValue  = qty * priceData.price;
                 const pnlAbsolute   = currentValue - totalInvested;
-                const pnlPercent    = totalInvested > 0
+                let pnlPercent      = totalInvested > 0
                   ? (pnlAbsolute / totalInvested) * 100
                   : 0;
+                // Clamp to Decimal(8,4) range: max ±9999.9999
+                pnlPercent = Math.max(-9999.9999, Math.min(9999.9999, pnlPercent));
 
                 await prisma.holding.update({
                   where: { id: h.id },
@@ -78,6 +157,15 @@ async function syncPrices(): Promise<void> {
                     pnlPercent,
                   },
                 });
+
+                // Recompute XIRR when current value changes
+                const xirrVal = await computeXirr(h.id, currentValue);
+                if (xirrVal !== null) {
+                  await prisma.holding.update({
+                    where: { id: h.id },
+                    data: { xirr: xirrVal },
+                  });
+                }
               })
             );
           } catch (err) {
@@ -112,6 +200,9 @@ async function syncPrices(): Promise<void> {
         });
       })
     );
+
+    // Sync fixed-income assets (PPF, FD, RD, EPF, NPS) — compound interest
+    await syncFixedIncomeValues();
 
     const elapsed = Date.now() - startedAt;
     console.log(

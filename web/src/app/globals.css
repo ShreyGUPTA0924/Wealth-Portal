@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Class-based dark mode for next-themes (overrides default media query) */
+@variant dark (&:is(.dark *));
+
 /* ─── Brand Design Tokens ──────────────────────────────────────────────── */
 @theme {
   --color-brand:       #4F46E5; /* Indigo */
@@ -99,4 +102,46 @@ body {
 .otp-input:not(:placeholder-shown) {
   border-color: var(--color-brand);
   background-color: var(--color-brand-light);
+}
+
+/* ─── Navbar animations ─────────────────────────────────────────────────── */
+@keyframes slide-in-left {
+  from { transform: translateX(-100%); opacity: 0.9; }
+  to { transform: translateX(0); opacity: 1; }
+}
+.sidebar-slide-in {
+  animation: slide-in-left 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+/* ─── Logo — visible in light & dark mode ──────────────────────────────────── */
+.nav-logo-icon {
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #a855f7 100%);
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 14px -2px rgba(79, 70, 229, 0.45);
+}
+.dark .nav-logo-icon {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%);
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 20px -2px rgba(99, 102, 241, 0.5);
+}
+.nav-logo-text {
+  color: #1a1a1a;
+}
+.nav-logo-accent {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 800;
+}
+.dark .nav-logo-text {
+  color: #ffffff;
+}
+.dark .nav-logo-accent {
+  background: linear-gradient(135deg, #a5b4fc, #c4b5fd);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }

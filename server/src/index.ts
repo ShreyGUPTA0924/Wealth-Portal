@@ -78,6 +78,7 @@ import familyRouter from './routes/family.routes';
 import aiRouter from './routes/ai.routes';
 import learnRouter from './routes/learn.routes';
 import settingsRouter from './routes/settings.routes';
+import remindersRouter from './routes/reminders.routes';
 // import reportsRouter from './routes/reports.routes';
 // import notificationsRouter from './routes/notifications.routes';
 
@@ -91,6 +92,7 @@ app.use('/api/family', familyRouter);
 app.use('/api/ai', aiRouter);
 app.use('/api/learn', learnRouter);
 app.use('/api/settings', authenticate, settingsRouter);
+app.use('/api/reminders', remindersRouter);
 // app.use('/api/reports', reportsRouter);
 // app.use('/api/notifications', notificationsRouter);
 
@@ -105,12 +107,14 @@ app.use((_req: Request, res: Response) => {
 // ─── Global Error Handler ─────────────────────────────────────────────────────
 // Must have 4 parameters for Express to recognise it as an error handler
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+app.use((err: Error & { statusCode?: number }, _req: Request, res: Response, _next: NextFunction) => {
   console.error(`[ERROR] ${err.message}`, { stack: err.stack });
 
-  res.status(500).json({
+  const status = err.statusCode ?? 500;
+  const message = NODE_ENV === 'production' && status === 500 ? 'Internal server error' : err.message;
+  res.status(status).json({
     success: false,
-    message: NODE_ENV === 'production' ? 'Internal server error' : err.message,
+    message,
   });
 });
 

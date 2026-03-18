@@ -1,5 +1,6 @@
 import { prisma } from '../lib/prisma';
 import { AssetClass } from '@prisma/client';
+import * as remindersService from './reminders.service';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -56,6 +57,17 @@ export interface DashboardData {
     totalItems: number;
     paidItems:  number;
   };
+  upcomingBills: Array<{
+    id:            string;
+    label:         string;
+    category:     string;
+    amount:       number | null;
+    dueDayOfMonth: number;
+    isPaid:       boolean;
+    paidAt:       string | null;
+    daysUntilDue: number;
+    isOverdue:    boolean;
+  }>;
   aiInsights: string[];
 }
 
@@ -127,10 +139,10 @@ function mockChangePercent(seed: number, multiplier: number): number {
 export async function getDashboardData(userId: string): Promise<DashboardData> {
   const now = new Date();
 
-  // Fetch all in parallel
-  const [portfolio, goals, checklistTemplates, recentTxns] = await Promise.all([
-    prisma.portfolio.findFirst({
-      where:   { userId, familyMemberId: null },
+  // Fetch all in parallel — include ALL portfolios (own + family members) for combined wealth
+  const [portfolios, goals, checklistTemplates, recentTxns] = await Promise.all([
+    prisma.portfolio.findMany({
+      where:   { userId },
       include: {
         holdings: {
           where:  { isActive: true },
@@ -175,8 +187,8 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
     }),
   ]);
 
-  // ── Net worth ──────────────────────────────────────────────────────────────
-  const holdings      = portfolio?.holdings ?? [];
+  // ── Net worth (aggregate across own + family portfolios) ────────────────────
+  const holdings      = portfolios.flatMap((p) => p.holdings);
   const totalInvested = holdings.reduce((s, h) => s + toNum(h.totalInvested), 0);
   const currentValue  = holdings.reduce((s, h) => s + toNum(h.currentValue),  0);
   const pnlAbsolute   = currentValue - totalInvested;
@@ -267,6 +279,20 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
   });
   const paidItems = checklistItems.filter((i) => i.isPaid).length;
 
+  // ── Upcoming bills (top 3 overdue + due in 7 days) ─────────────────────────
+  const upcomingBillsRaw = await remindersService.getUpcomingReminders(userId);
+  const upcomingBills = upcomingBillsRaw.slice(0, 3).map((r) => ({
+    id:            r.id,
+    label:         r.label,
+    category:      r.category,
+    amount:        r.amount,
+    dueDayOfMonth: r.dueDayOfMonth,
+    isPaid:        r.isPaid,
+    paidAt:        r.paidAt,
+    daysUntilDue:  r.daysUntilDue,
+    isOverdue:     r.isOverdue,
+  }));
+
   // ── AI Insights ───────────────────────────────────────────────────────────
   const insightHoldings = holdings.map((h) => ({
     name:       h.name,
@@ -288,6 +314,7 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
     recentTransactions,
     goalsSummary,
     checklist: { items: checklistItems, totalItems: checklistItems.length, paidItems },
+    upcomingBills,
     aiInsights,
   };
 }
@@ -366,11 +393,19 @@ export async function toggleChecklistItem(
 // ─── Net Worth History (mock) ─────────────────────────────────────────────────
 
 export async function getNetWorthHistory(userId: string, period: string) {
-  const portfolio = await prisma.portfolio.findFirst({
-    where: { userId, familyMemberId: null },
+  const portfolios = await prisma.portfolio.findMany({
+    where:   { userId },
+    include: {
+      holdings: {
+        where: { isActive: true },
+        select: { currentValue: true, totalInvested: true },
+      },
+    },
   });
-  const currentValue  = toNum(portfolio?.currentValue);
-  const totalInvested = toNum(portfolio?.totalInvested);
+  // Aggregate across own + family portfolios (same as getDashboardData)
+  const holdings      = portfolios.flatMap((p) => p.holdings);
+  const currentValue  = holdings.reduce((s, h) => s + toNum(h.currentValue), 0);
+  const totalInvested = holdings.reduce((s, h) => s + toNum(h.totalInvested), 0);
 
   const periodMap: Record<string, { days: number; label: string }> = {
     '1M':  { days: 30,  label: '1M' },
@@ -386,21 +421,22 @@ export async function getNetWorthHistory(userId: string, period: string) {
 
   // Generate smooth growth curve from invested → current
   const dataPoints: { date: string; value: number }[] = [];
-  const startValue = totalInvested * 0.9;
-  const endValue   = currentValue;
-  const steps      = Math.min(days, 60);
+  const steps = Math.min(days, 60);
+  // When no data, use a placeholder curve (0→100) so the chart always renders visibly
+  const hasData = totalInvested > 0 || currentValue > 0;
+  const startValue = hasData ? totalInvested * 0.9 : 0;
+  const endValue   = hasData ? currentValue : 100;
 
   for (let i = 0; i <= steps; i++) {
     const t     = i / steps;
     const date  = new Date(now.getTime() - (days - t * days) * 24 * 60 * 60 * 1000);
-    // S-curve growth with small noise
     const noise = 1 + ((((i * 7 + 3) % 11) - 5) / 100) * 0.5;
     const value = startValue + (endValue - startValue) * (t * t * (3 - 2 * t)) * noise;
     dataPoints.push({
       date:  date.toISOString().slice(0, 10),
-      value: Math.round(value),
+      value: Math.round(Math.max(0, value)),
     });
   }
 
-  return { period: cfg.label, dataPoints };
+  return { period: cfg.label, dataPoints, isPlaceholder: !hasData };
 }

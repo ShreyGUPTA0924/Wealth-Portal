@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import type { StringValue } from 'ms';
 import speakeasy from 'speakeasy';
+import axios from 'axios';
 import { prisma } from '../lib/prisma';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -168,6 +169,10 @@ export async function loginUser(dto: LoginDto): Promise<LoginResult> {
     throw createError('Invalid email or password', 401);
   }
 
+  if (!user.passwordHash) {
+    throw createError('This account uses Google sign-in. Please click "Continue with Google".', 401);
+  }
+
   const passwordMatch = await bcrypt.compare(dto.password, user.passwordHash);
   if (!passwordMatch) {
     throw createError('Invalid email or password', 401);
@@ -251,6 +256,64 @@ export async function setup2FA(
   });
 
   return { otpauthUrl: secret.otpauth_url ?? '' };
+}
+
+/**
+ * Google OAuth — verify access token with Google, then find-or-create user.
+ * Returns the same shape as a normal login so the controller can reuse setAuthCookies.
+ */
+export async function googleAuthUser(
+  accessToken: string
+): Promise<{ user: SafeUser; tokens: AuthTokens }> {
+  // Verify the token by fetching profile from Google
+  let googleProfile: { sub: string; email: string; name: string; picture?: string };
+  try {
+    const { data } = await axios.get<{ sub: string; email: string; name: string; picture?: string }>(
+      'https://www.googleapis.com/oauth2/v3/userinfo',
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+    googleProfile = data;
+  } catch {
+    throw createError('Invalid Google token — please try again', 401);
+  }
+
+  const { sub: googleId, email, name, picture } = googleProfile;
+
+  // Try to find existing user by googleId first, then by email
+  let user = await prisma.user.findUnique({ where: { googleId } });
+
+  if (!user) {
+    const byEmail = await prisma.user.findUnique({
+      where: { email: email.toLowerCase() },
+    });
+
+    if (byEmail) {
+      // Link Google ID to an existing email account
+      user = await prisma.user.update({
+        where: { id: byEmail.id },
+        data: { googleId, avatarUrl: byEmail.avatarUrl ?? picture ?? null },
+      });
+    } else {
+      // Brand-new user — create account + default portfolio
+      user = await prisma.$transaction(async (tx) => {
+        const newUser = await tx.user.create({
+          data: {
+            email: email.toLowerCase(),
+            fullName: name,
+            googleId,
+            avatarUrl: picture ?? null,
+            passwordHash: null,
+          },
+        });
+        await tx.portfolio.create({
+          data: { userId: newUser.id, name: 'My Portfolio' },
+        });
+        return newUser;
+      });
+    }
+  }
+
+  return { user: toSafeUser(user), tokens: makeTokens(user.id, user.email) };
 }
 
 /**

@@ -35,6 +35,7 @@ export interface AddHoldingDto {
   maturityDate?: string;
   interestRate?: number;
   notes?:       string;
+  portfolioId?: string; // When provided, use this portfolio instead of user's main one
 }
 
 export interface UpdateHoldingDto {
@@ -126,8 +127,9 @@ async function fetchLivePrice(
 /**
  * Compute XIRR for a holding given its transactions + current value.
  * Buys are negative cash flows, sells/current value are positive.
+ * Exported for use by price sync job.
  */
-async function computeXirr(holdingId: string, currentValue: number): Promise<number | null> {
+export async function computeXirr(holdingId: string, currentValue: number): Promise<number | null> {
   const txns = await prisma.transaction.findMany({
     where:   { holdingId },
     orderBy: { transactionDate: 'asc' },
@@ -292,9 +294,9 @@ export async function getHoldingById(userId: string, holdingId: string) {
 }
 
 export async function addHolding(userId: string, dto: AddHoldingDto) {
-  const portfolio = await prisma.portfolio.findFirst({
-    where: { userId, familyMemberId: null },
-  });
+  const portfolio = dto.portfolioId
+    ? await prisma.portfolio.findFirst({ where: { id: dto.portfolioId, userId } })
+    : await prisma.portfolio.findFirst({ where: { userId, familyMemberId: null } });
   if (!portfolio) throw appError('Portfolio not found', 404);
 
   const riskScore    = RISK_SCORES[dto.assetClass] ?? 5;
@@ -340,7 +342,7 @@ export async function addHolding(userId: string, dto: AddHoldingDto) {
     });
 
     return h;
-  });
+  }, { timeout: 15_000 });
 
   // Recompute portfolio totals outside the main transaction
   await recalculatePortfolio(portfolio.id);
@@ -458,7 +460,7 @@ export async function addTransaction(
         pnlPercent,
       },
     });
-  });
+  }, { timeout: 15_000 });
 
   await recalculatePortfolio(holding.portfolioId);
 
@@ -552,7 +554,7 @@ export async function importCsvHoldings(
             notes:           'CSV import',
           },
         });
-      });
+      }, { timeout: 15_000 });
 
       imported++;
     } catch (err) {
