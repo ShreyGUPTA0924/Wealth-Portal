@@ -33,21 +33,31 @@ function computeRecommendedSip(
   return Math.max(0, Math.round(sip));
 }
 
+/**
+ * Compares actual progress vs expected progress (based on time elapsed).
+ * ON_TRACK: actual >= 90% of expected
+ * AT_RISK:  actual >= 60% of expected
+ * OFF_TRACK: else
+ */
 function computeHealthStatus(
   targetAmount:  number,
   currentAmount: number,
-  targetDate:    Date
+  targetDate:    Date,
+  createdAt:     Date
 ): GoalHealthStatus {
-  const now         = new Date();
-  const totalDays   = Math.max(1, (targetDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-  const progressPct = targetAmount > 0 ? (currentAmount / targetAmount) * 100 : 0;
+  const now = new Date();
+  const totalMs = targetDate.getTime() - createdAt.getTime();
+  const elapsedMs = now.getTime() - createdAt.getTime();
 
-  const monthsLeft  = totalDays / 30;
-  // Time elapsed percent from creation — approximate assuming 3 year horizon
-  const timeElapsed = Math.max(0, 1 - monthsLeft / 36);
+  if (totalMs <= 0 || elapsedMs < 0) {
+    return currentAmount >= targetAmount ? GoalHealthStatus.ON_TRACK : GoalHealthStatus.OFF_TRACK;
+  }
 
-  if (progressPct >= timeElapsed * 100 * 0.9) return GoalHealthStatus.ON_TRACK;
-  if (progressPct >= timeElapsed * 100 * 0.6) return GoalHealthStatus.AT_RISK;
+  const expectedProgressPct = Math.min(100, (elapsedMs / totalMs) * 100);
+  const actualProgressPct = targetAmount > 0 ? (currentAmount / targetAmount) * 100 : 0;
+
+  if (actualProgressPct >= expectedProgressPct * 0.9) return GoalHealthStatus.ON_TRACK;
+  if (actualProgressPct >= expectedProgressPct * 0.6) return GoalHealthStatus.AT_RISK;
   return GoalHealthStatus.OFF_TRACK;
 }
 
@@ -82,23 +92,25 @@ export async function getGoals(userId: string, portfolioId?: string) {
     orderBy: { priority: 'asc' },
   });
 
-  return goals.map((g) => ({
-    id:                    g.id,
-    portfolioId:           g.portfolioId,
-    name:                  g.name,
-    category:              g.category,
-    targetAmount:          toNum(g.targetAmount),
-    currentAmount:         toNum(g.currentAmount),
-    targetDate:            g.targetDate.toISOString(),
-    recommendedMonthlySip: g.recommendedMonthlySip ? toNum(g.recommendedMonthlySip) : null,
-    healthStatus:          g.healthStatus,
-    priority:              g.priority,
-    progressPercent:
-      toNum(g.targetAmount) > 0
-        ? Math.min((toNum(g.currentAmount) / toNum(g.targetAmount)) * 100, 100)
-        : 0,
-    createdAt:             g.createdAt.toISOString(),
-  }));
+  return goals.map((g) => {
+    const target = toNum(g.targetAmount);
+    const current = toNum(g.currentAmount);
+    const healthStatus = computeHealthStatus(target, current, g.targetDate, g.createdAt);
+    return {
+      id:                    g.id,
+      portfolioId:           g.portfolioId,
+      name:                  g.name,
+      category:              g.category,
+      targetAmount:          target,
+      currentAmount:         current,
+      targetDate:            g.targetDate.toISOString(),
+      recommendedMonthlySip: g.recommendedMonthlySip ? toNum(g.recommendedMonthlySip) : null,
+      healthStatus,
+      priority:              g.priority,
+      progressPercent:      target > 0 ? Math.min((current / target) * 100, 100) : 0,
+      createdAt:             g.createdAt.toISOString(),
+    };
+  });
 }
 
 export async function getGoalById(userId: string, goalId: string) {
@@ -182,10 +194,11 @@ export async function createGoal(userId: string, dto: CreateGoalDto) {
   }
   if (!portfolio) throw appError('Portfolio not found', 404);
 
+  const now = new Date();
   const targetDate  = new Date(dto.targetDate);
-  const monthsLeft  = Math.max(1, monthsBetween(new Date(), targetDate));
+  const monthsLeft  = Math.max(1, monthsBetween(now, targetDate));
   const recommendedMonthlySip = computeRecommendedSip(dto.targetAmount, 0, monthsLeft);
-  const healthStatus = computeHealthStatus(dto.targetAmount, 0, targetDate);
+  const healthStatus = computeHealthStatus(dto.targetAmount, 0, targetDate, now);
 
   // Determine next priority
   const maxPriority = await prisma.goal.aggregate({
@@ -221,7 +234,7 @@ export async function updateGoal(userId: string, goalId: string, dto: UpdateGoal
   const currentAmount = toNum(existing.currentAmount);
   const monthsLeft  = Math.max(1, monthsBetween(new Date(), targetDate));
   const recommendedMonthlySip = computeRecommendedSip(targetAmount, currentAmount, monthsLeft);
-  const healthStatus = computeHealthStatus(targetAmount, currentAmount, targetDate);
+  const healthStatus = computeHealthStatus(targetAmount, currentAmount, targetDate, existing.createdAt);
 
   await prisma.goal.update({
     where: { id: goalId },
@@ -276,7 +289,7 @@ export async function linkHolding(
   );
 
   const targetAmount = toNum(goal.targetAmount);
-  const healthStatus = computeHealthStatus(targetAmount, newCurrentAmount, goal.targetDate);
+  const healthStatus = computeHealthStatus(targetAmount, newCurrentAmount, goal.targetDate, goal.createdAt);
 
   await prisma.goal.update({
     where: { id: goalId },
@@ -339,4 +352,28 @@ export async function reorderGoals(userId: string, orderedIds: string[]): Promis
       })
     )
   );
+}
+
+/** Sync goal currentAmount from linked holdings (call after price sync) */
+export async function syncGoalCurrentAmounts(): Promise<void> {
+  const goals = await prisma.goal.findMany({
+    include: {
+      goalHoldings: {
+        include: { holding: { select: { currentValue: true } } },
+      },
+    },
+  });
+  for (const g of goals) {
+    const newCurrent = g.goalHoldings.reduce(
+      (sum, gh) =>
+        sum + (toNum(gh.holding.currentValue) * toNum(gh.allocationPercent)) / 100,
+      0
+    );
+    const target = toNum(g.targetAmount);
+    const health = computeHealthStatus(target, newCurrent, g.targetDate, g.createdAt);
+    await prisma.goal.update({
+      where: { id: g.id },
+      data: { currentAmount: newCurrent, healthStatus: health },
+    });
+  }
 }

@@ -3,6 +3,7 @@ import { prisma } from '../lib/prisma';
 import { compoundInterestValue } from '../lib/calculations';
 import { getPrice, type AssetClass } from '../services/market.service';
 import { computeXirr } from '../services/holdings.service';
+import { syncGoalCurrentAmounts } from '../services/goals.service';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -203,6 +204,9 @@ async function syncPrices(): Promise<void> {
 
     // Sync fixed-income assets (PPF, FD, RD, EPF, NPS) — compound interest
     await syncFixedIncomeValues();
+
+    // Sync goal currentAmount from linked holdings
+    await syncGoalCurrentAmounts();
 
     const elapsed = Date.now() - startedAt;
     console.log(

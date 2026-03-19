@@ -77,19 +77,19 @@ function monthsBetween(a: Date, b: Date) {
 // ─── Category config ──────────────────────────────────────────────────────────
 
 const CATEGORY_CONFIG: Record<string, { icon: React.ElementType; color: string; bg: string }> = {
-  RETIREMENT: { icon: Umbrella,       color: 'text-purple-600',  bg: 'bg-purple-100' },
-  HOUSE:      { icon: Home,           color: 'text-blue-600',    bg: 'bg-blue-100' },
-  EDUCATION:  { icon: GraduationCap,  color: 'text-teal-600',    bg: 'bg-teal-100' },
-  TRAVEL:     { icon: Plane,          color: 'text-amber-600',   bg: 'bg-amber-100' },
-  EMERGENCY:  { icon: Shield,         color: 'text-red-600',     bg: 'bg-red-100' },
-  WEDDING:    { icon: Heart,          color: 'text-pink-600',    bg: 'bg-pink-100' },
+  RETIREMENT: { icon: Umbrella,       color: 'text-purple-600 dark:text-purple-400',  bg: 'bg-purple-100 dark:bg-purple-500/20' },
+  HOUSE:      { icon: Home,           color: 'text-blue-600 dark:text-blue-400',    bg: 'bg-blue-100 dark:bg-blue-500/20' },
+  EDUCATION:  { icon: GraduationCap,  color: 'text-teal-600 dark:text-teal-400',    bg: 'bg-teal-100 dark:bg-teal-500/20' },
+  TRAVEL:     { icon: Plane,          color: 'text-amber-600 dark:text-amber-400',   bg: 'bg-amber-100 dark:bg-amber-500/20' },
+  EMERGENCY:  { icon: Shield,         color: 'text-red-600 dark:text-red-400',     bg: 'bg-red-100 dark:bg-red-500/20' },
+  WEDDING:    { icon: Heart,          color: 'text-pink-600 dark:text-pink-400',    bg: 'bg-pink-100 dark:bg-pink-500/20' },
   CUSTOM:     { icon: Target,         color: 'text-foreground-muted',    bg: 'bg-border' },
 };
 
 const HEALTH_STYLES: Record<string, string> = {
-  ON_TRACK:  'bg-green-100 text-green-700',
-  AT_RISK:   'bg-amber-100 text-amber-700',
-  OFF_TRACK: 'bg-red-100 text-red-700',
+  ON_TRACK:  'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400',
+  AT_RISK:   'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400',
+  OFF_TRACK: 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400',
 };
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
@@ -139,7 +139,7 @@ function GoalSimulator({ goal }: { goal: GoalDetail }) {
       <div className="mb-5">
         <div className="flex justify-between items-center mb-2">
           <label className="text-xs text-foreground-muted font-medium">Monthly SIP</label>
-          <span className="text-base font-bold text-[#3C3489]">{formatInr(sipAmount)}</span>
+          <span className="text-base font-bold text-indigo-600 dark:text-indigo-400">{formatInr(sipAmount)}</span>
         </div>
         <input
           type="range"
@@ -326,7 +326,7 @@ export default function GoalDetailPage() {
   const months = Math.max(0, monthsBetween(now, new Date(goal.targetDate)));
   const years  = Math.floor(months / 12);
   const remMo  = months % 12;
-  const timeLabel = years > 0 ? `${years}y ${remMo}m left` : `${months}m left`;
+  const timeLabel = years > 0 ? `${years}y ${remMo}mo left` : `${months} months left`;
 
   return (
     <div className="space-y-5 max-w-4xl">
