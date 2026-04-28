@@ -8,7 +8,7 @@ import {
 } from 'recharts';
 import {
   TrendingUp, TrendingDown, Lightbulb, CheckCircle2, Circle,
-  AlertCircle, Target, Clock, ArrowRight, Plus, Sparkles,
+  AlertCircle, Target, Clock, ArrowRight, Plus, Sparkles, ShieldAlert
 } from 'lucide-react';
 import Link from 'next/link';
 import apiClient from '@/lib/api-client';
@@ -109,10 +109,10 @@ const TXN_STYLES: Record<string, string> = {
 const CustomTooltip = ({ active, payload, label, prefix = '' }: any) => {
   if (active && payload && payload.length) {
     return (
-      <Card className="p-3 !rounded-xl !bg-background-card/80 !backdrop-blur-md !border-border shadow-lg !shadow-brand/5">
-        <p className="text-xs text-foreground-muted mb-1 font-medium">{label}</p>
-        <p className="text-sm font-bold text-foreground flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-premium-gradient block" />
+      <Card className="p-3 !rounded-2xl !bg-[#0f172a]/80 !backdrop-blur-xl border border-white/10 shadow-[0_0_30px_rgba(139,92,246,0.2)]">
+        <p className="text-[10px] uppercase tracking-widest text-foreground-muted mb-1 font-bold">{label}</p>
+        <p className="text-sm font-black text-white flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-gradient-to-r from-cyan-400 to-purple-500 block shadow-[0_0_10px_rgba(34,211,238,0.8)]" />
           {prefix}{formatInr(payload[0].value)}
         </p>
       </Card>
@@ -205,20 +205,23 @@ function NetWorthSection({ data }: { data: DashboardData }) {
   ];
 
   return (
-    <Card className="p-6 h-full flex flex-col">
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+    <Card className="p-6 h-full flex flex-col relative overflow-hidden group bg-background-card/40 backdrop-blur-3xl border border-white/5 hover:border-brand/40 transition-all duration-500 hover:shadow-[0_0_50px_-15px_rgba(139,92,246,0.3)]">
+      {/* Subtle background glow for the card */}
+      <div className="absolute -top-32 -right-32 w-64 h-64 bg-brand/20 rounded-full blur-[80px] pointer-events-none opacity-50 group-hover:opacity-100 transition-opacity duration-700" />
+      
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 relative z-10">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <p className="text-xs font-semibold text-foreground-muted uppercase tracking-wider">Net Worth</p>
-            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-green-50 border border-green-200">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
+            <p className="text-[10px] font-black text-foreground-muted uppercase tracking-widest">Net Worth</p>
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/20">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.8)]" />
               </span>
-              <span className="text-[10px] font-bold text-green-600 uppercase tracking-wider">LIVE</span>
+              <span className="text-[9px] font-black text-cyan-500 uppercase tracking-widest shadow-cyan-500/50">LIVE</span>
             </span>
           </div>
-          <p className="text-4xl md:text-5xl font-extrabold text-foreground tracking-tight">
+          <p className="text-4xl md:text-6xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-br from-white via-gray-200 to-gray-500 drop-shadow-sm mt-1">
             {formatInr(data.netWorth.current)}
           </p>
           <p className="text-xs text-foreground-muted mt-1">
@@ -255,12 +258,12 @@ function NetWorthSection({ data }: { data: DashboardData }) {
       </div>
 
       {/* 4 stats above the graph */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-8 relative z-10">
         {stats.map((s) => (
-          <div key={s.label} className="p-4 rounded-xl bg-background-card/60 border border-border">
-            <p className="text-xs text-foreground-muted font-medium">{s.label}</p>
-            <p className={`text-lg font-bold mt-1 truncate ${s.color}`}>{s.value}</p>
-            {s.sub && <p className={`text-xs mt-0.5 font-semibold ${s.color}`}>{s.sub}</p>}
+          <div key={s.label} className="p-4 rounded-2xl bg-white/5 dark:bg-white/5 border border-white/10 backdrop-blur-md hover:bg-white/10 transition-colors">
+            <p className="text-[10px] uppercase tracking-widest text-foreground-muted font-bold">{s.label}</p>
+            <p className={`text-xl font-black mt-1 truncate tracking-tight ${s.color}`}>{s.value}</p>
+            {s.sub && <p className={`text-xs mt-0.5 font-bold ${s.color}`}>{s.sub}</p>}
           </div>
         ))}
       </div>
@@ -278,11 +281,12 @@ function NetWorthSection({ data }: { data: DashboardData }) {
             <AreaChart data={chartData} margin={{ top: 5, right: 0, bottom: 0, left: 0 }}>
               <defs>
                 <linearGradient id="premiumGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%"  stopColor="#a855f7" stopOpacity={0.4} />
-                  <stop offset="100%" stopColor="#6366f1" stopOpacity={0} />
+                  <stop offset="0%"  stopColor="#06B6D4" stopOpacity={0.6} />
+                  <stop offset="50%" stopColor="#8B5CF6" stopOpacity={0.2} />
+                  <stop offset="100%" stopColor="#8B5CF6" stopOpacity={0} />
                 </linearGradient>
                 <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-                  <feDropShadow dx="0" dy="8" stdDeviation="6" floodColor="#a855f7" floodOpacity="0.3" />
+                  <feDropShadow dx="0" dy="8" stdDeviation="10" floodColor="#06B6D4" floodOpacity="0.5" />
                 </filter>
               </defs>
               <XAxis
@@ -341,8 +345,8 @@ function AllocationSection({ data }: { data: DashboardData }) {
   }
 
   return (
-    <Card className="p-6 h-full flex flex-col">
-      <h3 className="text-sm font-semibold text-foreground mb-6">Asset Allocation</h3>
+    <Card className="p-6 h-full flex flex-col bg-background-card/40 backdrop-blur-3xl border border-white/5 hover:border-brand/40 transition-all duration-500 hover:shadow-[0_0_40px_-15px_rgba(139,92,246,0.3)]">
+      <h3 className="text-[10px] font-black text-foreground uppercase tracking-widest mb-6">Asset Allocation</h3>
       <div className="flex flex-col items-center flex-1 gap-6 justify-center">
         <div className="w-48 h-48 shrink-0 relative">
           <ResponsiveContainer width="100%" height="100%">
@@ -409,26 +413,26 @@ function MoverCard({ holding, positive }: { holding: DashboardData['topGainers']
 function TopMoversSection({ data }: { data: DashboardData }) {
   return (
     <div className="flex flex-col gap-4 h-full">
-      <Card className="p-5 flex-1">
+      <Card className="p-5 flex-1 bg-background-card/40 backdrop-blur-3xl border border-white/5 hover:border-brand/40 transition-all duration-500 hover:shadow-[0_0_40px_-15px_rgba(139,92,246,0.3)]">
         <div className="flex items-center gap-2 mb-4">
-          <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center">
-             <TrendingUp className="w-4 h-4 text-green-600" />
+          <div className="w-8 h-8 rounded-full bg-green-500/10 flex items-center justify-center">
+             <TrendingUp className="w-4 h-4 text-green-500" />
           </div>
-          <h3 className="text-sm font-bold text-foreground">Top Gainers</h3>
+          <h3 className="text-[10px] font-black text-foreground uppercase tracking-widest">Top Gainers</h3>
         </div>
-        <div className="divide-y divide-gray-50">
+        <div className="divide-y divide-white/5">
           {data.topGainers.length === 0
-            ? <p className="text-xs text-foreground-muted text-center py-4">No holdings in profit yet</p>
+            ? <p className="text-xs text-foreground-muted text-center py-4 font-bold tracking-wider">NO GAINERS YET</p>
             : data.topGainers.map((h) => <MoverCard key={h.id} holding={h} positive />)
           }
         </div>
       </Card>
-      <Card className="p-5 flex-1">
+      <Card className="p-5 flex-1 bg-background-card/40 backdrop-blur-3xl border border-white/5 hover:border-brand/40 transition-all duration-500 hover:shadow-[0_0_40px_-15px_rgba(139,92,246,0.3)]">
         <div className="flex items-center gap-2 mb-4">
-          <div className="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center">
-            <TrendingDown className="w-4 h-4 text-red-600" />
+          <div className="w-8 h-8 rounded-full bg-red-500/10 flex items-center justify-center">
+            <TrendingDown className="w-4 h-4 text-red-500" />
           </div>
-          <h3 className="text-sm font-bold text-foreground">Top Losers</h3>
+          <h3 className="text-[10px] font-black text-foreground uppercase tracking-widest">Top Losers</h3>
         </div>
         <div className="divide-y divide-gray-50">
           {data.topLosers.length === 0
@@ -445,44 +449,47 @@ function TopMoversSection({ data }: { data: DashboardData }) {
 
 function AiInsightsSection({ insights }: { insights: string[] }) {
   return (
-    <Card className="p-6 h-full relative overflow-hidden group">
-      <div className="absolute top-0 right-0 w-64 h-64 bg-[#6366f1]/10 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2 pointer-events-none transition-transform duration-1000 group-hover:scale-150" />
-      <div className="flex items-center justify-between mb-6 relative z-10">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-[#6366f1]/10 flex items-center justify-center relative">
-             <div className="absolute inset-0 rounded-full bg-[#6366f1]/20 animate-ping" />
-             <Sparkles className="w-4 h-4 text-[#6366f1]" />
+    <Card className="relative p-[1px] h-full overflow-hidden group rounded-[2rem] bg-gradient-to-r from-brand/20 via-purple-500/20 to-cyan-500/20 hover:from-brand/40 hover:via-purple-500/40 hover:to-cyan-500/40 transition-all duration-1000">
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-[2000ms]" />
+      <div className="p-6 h-full bg-[#0f172a]/90 backdrop-blur-3xl rounded-[calc(2rem-1px)] relative z-10 flex flex-col">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-brand/20 rounded-full blur-[100px] transform translate-x-1/2 -translate-y-1/2 pointer-events-none transition-transform duration-1000 group-hover:scale-150" />
+        <div className="flex items-center justify-between mb-6 relative z-10">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-brand/20 flex items-center justify-center relative shadow-[0_0_20px_rgba(99,102,241,0.4)]">
+               <div className="absolute inset-0 rounded-xl bg-brand/30 animate-ping" />
+               <Sparkles className="w-5 h-5 text-brand drop-shadow-[0_0_10px_rgba(99,102,241,0.8)]" />
+            </div>
+            <h3 className="text-lg font-black text-white flex items-center gap-2 tracking-tight">
+              AI Assistant
+              <span className="flex gap-0.5 mt-1 ml-2">
+                <span className="w-1.5 h-1.5 bg-brand rounded-full animate-bounce shadow-[0_0_5px_rgba(99,102,241,0.8)]" style={{ animationDelay: '0ms' }} />
+                <span className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-bounce shadow-[0_0_5px_rgba(168,85,247,0.8)]" style={{ animationDelay: '150ms' }} />
+                <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce shadow-[0_0_5px_rgba(34,211,238,0.8)]" style={{ animationDelay: '300ms' }} />
+              </span>
+            </h3>
           </div>
-          <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-            AI Assistant
-            <span className="flex gap-0.5 mt-0.5">
-              <span className="w-1 h-1 bg-[#6366f1] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-              <span className="w-1 h-1 bg-[#6366f1] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-              <span className="w-1 h-1 bg-[#6366f1] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-            </span>
-          </h3>
+          <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full bg-gradient-to-r from-brand/20 to-purple-500/20 text-white border border-white/10 shadow-[0_0_15px_rgba(99,102,241,0.2)]">
+            Generating Insights
+          </span>
         </div>
-        <span className="text-xs font-semibold px-3 py-1 rounded-full bg-premium-gradient text-white shadow-md shadow-[#6366f1]/20">
-          Generating Insights
-        </span>
-      </div>
-      <MotionWrapper stagger className="grid grid-cols-1 md:grid-cols-3 gap-4 relative z-10">
-        {insights.map((insight, i) => (
-          <MotionItem key={i}>
-            <div className="flex gap-3 p-4 bg-background-card/80 backdrop-blur-xl rounded-2xl border border-border transition-all duration-300 hover:shadow-lg hover:shadow-[#6366f1]/5 relative overflow-hidden h-full">
-              <div className="absolute left-0 top-0 w-1 h-full bg-premium-gradient opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-              <div className="shrink-0 mt-0.5">
-                <div className="w-6 h-6 rounded-full bg-[#6366f1]/10 flex items-center justify-center">
-                  <Lightbulb className="w-3.5 h-3.5 text-[#6366f1]" />
+        <MotionWrapper stagger className="grid grid-cols-1 md:grid-cols-3 gap-4 relative z-10 flex-1">
+          {insights.map((insight, i) => (
+            <MotionItem key={i}>
+              <div className="flex gap-4 p-5 bg-white/5 backdrop-blur-2xl rounded-2xl border border-white/10 transition-all duration-300 hover:bg-white/10 hover:shadow-[0_10px_30px_-10px_rgba(99,102,241,0.3)] hover:-translate-y-1 relative overflow-hidden h-full">
+                <div className="absolute left-0 top-0 w-1.5 h-full bg-gradient-to-b from-brand to-cyan-400 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                <div className="shrink-0 mt-0.5">
+                  <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shadow-inner">
+                    <Lightbulb className="w-4 h-4 text-cyan-400 drop-shadow-[0_0_5px_rgba(34,211,238,0.8)]" />
+                  </div>
                 </div>
-              </div>
-              <p className="text-sm font-medium text-foreground leading-relaxed">
+                <p className="text-sm font-semibold text-gray-200 leading-relaxed tracking-tight">
                 {insight}
               </p>
             </div>
           </MotionItem>
         ))}
       </MotionWrapper>
+      </div>
     </Card>
   );
 }
@@ -507,11 +514,11 @@ function ChecklistSection({ checklist, upcomingBills }: { checklist: DashboardDa
   const displayItems = upcomingBills.length > 0 ? upcomingBills.slice(0, 3) : [];
 
   return (
-    <Card className="p-6 h-full">
+    <Card className="p-6 h-full flex flex-col bg-background-card/40 backdrop-blur-3xl border border-white/5 hover:border-brand/40 transition-all duration-500 hover:shadow-[0_0_40px_-15px_rgba(139,92,246,0.3)]">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-sm font-bold text-foreground">Bill Reminders</h3>
-          <p className="text-xs text-foreground-muted font-medium mt-1">{paidItems} of {totalItems} paid this month</p>
+          <h3 className="text-[10px] font-black text-foreground uppercase tracking-widest">Bill Reminders</h3>
+          <p className="text-[10px] text-foreground-muted font-bold mt-1 tracking-wider">{paidItems} of {totalItems} paid this month</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="hidden sm:flex items-center gap-2">
@@ -589,9 +596,9 @@ function ChecklistSection({ checklist, upcomingBills }: { checklist: DashboardDa
 
 function GoalsSummarySection({ goals }: { goals: DashboardData['goalsSummary'] }) {
   return (
-    <Card className="p-6 h-full flex flex-col">
+    <Card className="p-6 h-full flex flex-col bg-background-card/40 backdrop-blur-3xl border border-white/5 hover:border-brand/40 transition-all duration-500 hover:shadow-[0_0_40px_-15px_rgba(139,92,246,0.3)]">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-sm font-bold text-foreground">Goal Progress</h3>
+        <h3 className="text-[10px] font-black text-foreground uppercase tracking-widest">Goal Progress</h3>
         <Link href="/goals" className="text-xs font-semibold text-brand hover:text-brand-dark flex items-center gap-1 transition-colors">
           View all <ArrowRight className="w-3.5 h-3.5" />
         </Link>
@@ -645,12 +652,12 @@ function GoalsSummarySection({ goals }: { goals: DashboardData['goalsSummary'] }
 
 function RemindersSection({ reminders }: { reminders: DashboardData['upcomingReminders'] }) {
   return (
-    <Card className="p-6 h-full">
+    <Card className="p-6 h-full flex flex-col bg-background-card/40 backdrop-blur-3xl border border-white/5 hover:border-brand/40 transition-all duration-500 hover:shadow-[0_0_40px_-15px_rgba(139,92,246,0.3)]">
       <div className="flex items-center gap-2 mb-6">
-        <div className="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center">
             <Clock className="w-4 h-4 text-amber-500" />
         </div>
-        <h3 className="text-sm font-bold text-foreground">Upcoming Reminders</h3>
+        <h3 className="text-[10px] font-black text-foreground uppercase tracking-widest">Upcoming Reminders</h3>
       </div>
       {reminders.length === 0 ? (
         <p className="text-sm font-medium text-foreground-muted text-center py-8">No upcoming events in 30 days</p>
@@ -688,9 +695,9 @@ function RemindersSection({ reminders }: { reminders: DashboardData['upcomingRem
 
 function RecentTxnsSection({ txns }: { txns: DashboardData['recentTransactions'] }) {
   return (
-    <Card className="p-6 h-full flex flex-col">
+    <Card className="p-6 h-full flex flex-col bg-background-card/40 backdrop-blur-3xl border border-white/5 hover:border-brand/40 transition-all duration-500 hover:shadow-[0_0_40px_-15px_rgba(139,92,246,0.3)]">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-sm font-bold text-foreground">Recent Transactions</h3>
+        <h3 className="text-[10px] font-black text-foreground uppercase tracking-widest">Recent Transactions</h3>
         <Link href="/portfolio" className="text-xs font-semibold text-[#6366f1] hover:text-[#818cf8] flex items-center gap-1 transition-colors">
           View all <ArrowRight className="w-3.5 h-3.5" />
         </Link>
@@ -730,6 +737,68 @@ function RecentTxnsSection({ txns }: { txns: DashboardData['recentTransactions']
   );
 }
 
+// ─── Risk Metrics (VaR / CVaR) ────────────────────────────────────────────────
+
+function RiskMetricsSection({ data }: { data: any }) {
+  if (!data) return null;
+
+  return (
+    <Card className="p-6 h-full relative overflow-hidden group bg-background-card/40 backdrop-blur-3xl border border-white/5 hover:border-brand/40 transition-all duration-500 hover:shadow-[0_0_40px_-15px_rgba(139,92,246,0.3)]">
+      <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-red-500/10 rounded-full blur-[100px] transform -translate-x-1/2 -translate-y-1/2 pointer-events-none transition-transform duration-1000 group-hover:scale-125 group-hover:bg-red-500/20" />
+      
+      <div className="flex items-center justify-between mb-8 relative z-10">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center relative shadow-[0_0_20px_rgba(239,68,68,0.3)]">
+            <div className="absolute inset-0 rounded-xl bg-red-500/20 animate-pulse" />
+            <ShieldAlert className="w-5 h-5 text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
+          </div>
+          <div>
+            <h3 className="text-[12px] font-black text-foreground uppercase tracking-widest">Advanced Risk Metrics</h3>
+            <p className="text-[10px] text-foreground-muted font-bold tracking-wider mt-0.5">Statistical Vulnerability (95% Confidence)</p>
+          </div>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
+         <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-5 border border-white/10 hover:bg-white/10 transition-colors relative overflow-hidden">
+            <div className="absolute left-0 top-0 w-1 h-full bg-gradient-to-b from-red-400 to-red-600" />
+            <p className="text-[10px] font-black text-red-400 uppercase tracking-widest mb-2 flex justify-between">
+              <span>1-Month VaR (95%)</span>
+              <span className="text-white/50">{data.var_95_pct.toFixed(2)}% of port.</span>
+            </p>
+            <p className="text-3xl font-black text-white tracking-tighter mb-4">{formatInr(data.var_amount)}</p>
+            
+            {/* High-tech Progress Bar representation */}
+            <div className="h-1.5 w-full bg-black/40 rounded-full overflow-hidden shadow-inner mb-3">
+               <div className="h-full bg-gradient-to-r from-red-600 to-red-400 rounded-full relative" style={{ width: `${Math.min(100, data.var_95_pct * 3)}%` }}>
+                  <div className="absolute right-0 top-0 bottom-0 w-2 bg-white/50 blur-[2px]" />
+               </div>
+            </div>
+            
+            <p className="text-[10px] font-medium text-gray-400 leading-relaxed">{data.message}</p>
+         </div>
+
+         <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-5 border border-white/10 hover:bg-white/10 transition-colors relative overflow-hidden">
+            <div className="absolute left-0 top-0 w-1 h-full bg-gradient-to-b from-amber-400 to-amber-600" />
+            <p className="text-[10px] font-black text-amber-400 uppercase tracking-widest mb-2 flex justify-between">
+              <span>Conditional VaR (CVaR)</span>
+              <span className="text-white/50">{data.cvar_95_pct.toFixed(2)}% of port.</span>
+            </p>
+            <p className="text-3xl font-black text-white tracking-tighter mb-4">{formatInr(data.cvar_amount)}</p>
+            
+            <div className="h-1.5 w-full bg-black/40 rounded-full overflow-hidden shadow-inner mb-3">
+               <div className="h-full bg-gradient-to-r from-amber-600 to-amber-400 rounded-full relative" style={{ width: `${Math.min(100, data.cvar_95_pct * 3)}%` }}>
+                  <div className="absolute right-0 top-0 bottom-0 w-2 bg-white/50 blur-[2px]" />
+               </div>
+            </div>
+            
+            <p className="text-[10px] font-medium text-gray-400 leading-relaxed">Expected loss severity if the 5% worst-case scenario occurs.</p>
+         </div>
+      </div>
+    </Card>
+  );
+}
+
 // ─── Loading Skeleton ─────────────────────────────────────────────────────────
 
 function DashboardSkeleton() {
@@ -759,6 +828,11 @@ export default function DashboardPage() {
     refetchInterval: 60_000,
   });
 
+  const { data: aiRiskMetrics } = useQuery({
+    queryKey: ['ai-risk-metrics'],
+    queryFn:  () => apiClient.get('/api/ai/risk-metrics').then((r) => r.data.data),
+  });
+
   if (isLoading) return <DashboardSkeleton />;
 
   if (error) {
@@ -779,8 +853,15 @@ export default function DashboardPage() {
   if (!data) return null;
 
   return (
-    <MotionWrapper stagger className="flex flex-col gap-8 max-w-[1400px] mx-auto pb-12">
+    <div className="relative min-h-screen">
+      {/* Ambient background blobs */}
+      <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-600/10 rounded-full blur-[120px] mix-blend-screen" />
+        <div className="absolute top-[40%] right-[-10%] w-[30%] h-[50%] bg-cyan-600/10 rounded-full blur-[120px] mix-blend-screen" />
+        <div className="absolute bottom-[-10%] left-[20%] w-[40%] h-[40%] bg-brand/10 rounded-full blur-[120px] mix-blend-screen" />
+      </div>
       
+      <MotionWrapper stagger className="flex flex-col gap-8 max-w-[1400px] mx-auto pb-12 relative z-10">
       {/* Top Section: Net Worth card (stats above chart) */}
       <BentoGrid>
         <BentoItem className="md:col-span-3 xl:col-span-4">
@@ -803,6 +884,12 @@ export default function DashboardPage() {
         <AiInsightsSection insights={data.aiInsights} />
       </MotionItem>
 
+      <BentoGrid>
+        <BentoItem className="md:col-span-3 xl:col-span-4">
+          <RiskMetricsSection data={aiRiskMetrics} />
+        </BentoItem>
+      </BentoGrid>
+
       {/* Bottom Grid: Checklist, Goals, Reminders, Transactions */}
       <BentoGrid>
          <BentoItem className="md:col-span-3 xl:col-span-2">
@@ -820,5 +907,6 @@ export default function DashboardPage() {
       </BentoGrid>
       
     </MotionWrapper>
+    </div>
   );
 }

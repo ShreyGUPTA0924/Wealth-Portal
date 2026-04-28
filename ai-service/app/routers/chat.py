@@ -9,7 +9,7 @@ import google.generativeai as genai
 router = APIRouter()
 
 genai.configure(api_key=os.environ.get("GEMINI_API_KEY", ""))
-model = genai.GenerativeModel("gemini-flash-latest")
+model = genai.GenerativeModel("gemini-2.5-flash")
 
 SYSTEM_PROMPT = """You are WealthPortal AI, a personal financial advisor for Indian investors.
 You have access to the user complete financial data.
