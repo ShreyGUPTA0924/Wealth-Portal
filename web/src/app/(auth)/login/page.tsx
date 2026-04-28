@@ -69,6 +69,8 @@ FloatingInput.displayName = 'FloatingInput';
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
+const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? '';
+
 export default function LoginPage() {
   const router = useRouter();
   const { setUser, isAuthenticated, user } = useAuthStore();
@@ -188,7 +190,7 @@ export default function LoginPage() {
         </div>
 
         {/* ── Google Sign-In ── */}
-        {!needsTwoFa && (
+        {!needsTwoFa && googleClientId && (
           <>
             <button
               type="button"

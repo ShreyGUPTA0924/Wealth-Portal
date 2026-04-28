@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: wealthportal-postgres
+    environment:
+      POSTGRES_USER: wealth
+      POSTGRES_PASSWORD: wealth
+      POSTGRES_DB: wealthportal
+    ports:
+      - "5433:5432"
+    volumes:
+      - wealthportal_pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: wealthportal-redis
+    ports:
+      - "6379:6379"
+
+volumes:
+  wealthportal_pgdata:

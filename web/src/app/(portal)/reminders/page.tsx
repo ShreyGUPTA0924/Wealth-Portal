@@ -36,6 +36,12 @@ interface CibilSuggestion {
   dueDayOfMonth:  number;
 }
 
+type CibilSuggestionRow = Omit<CibilSuggestion, 'amount'> & {
+  checked: boolean;
+  amount: string; // editable text input
+  dueDay: string; // editable text input
+};
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatInr(n: number | null | undefined): string {
@@ -434,7 +440,7 @@ function CibilImportModal({ onClose, onSuccess }: { onClose: () => void; onSucce
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [suggestions, setSuggestions] = useState<(CibilSuggestion & { checked: boolean; amount: string; dueDay: string })[]>([]);
+  const [suggestions, setSuggestions] = useState<CibilSuggestionRow[]>([]);
 
   const importMutation = useMutation({
     mutationFn: async (selected: CibilSuggestion[]) => {
@@ -503,7 +509,10 @@ function CibilImportModal({ onClose, onSuccess }: { onClose: () => void; onSucce
       .map((s) => ({
         label: s.label,
         category: s.category,
-        amount: parseFloat(s.amount) || s.amount,
+        amount: (() => {
+          const n = parseFloat(s.amount);
+          return Number.isFinite(n) ? n : 0;
+        })(),
         dueDayOfMonth: parseInt(s.dueDay, 10) || 5,
       }));
     importMutation.mutate(selected);

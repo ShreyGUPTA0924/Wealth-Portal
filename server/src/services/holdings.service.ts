@@ -26,16 +26,18 @@ const PRICEABLE: AssetClass[] = ['STOCK', 'MUTUAL_FUND', 'CRYPTO', 'GOLD', 'SGB'
 // ─── DTOs ─────────────────────────────────────────────────────────────────────
 
 export interface AddHoldingDto {
-  assetClass:   AssetClass;
-  symbol?:      string;
-  name:         string;
-  quantity:     number;
-  buyPrice:     number;
-  buyDate:      string; // ISO date string
+  assetClass:    AssetClass;
+  symbol?:       string;
+  name:          string;
+  quantity:      number;
+  buyPrice:      number;
+  buyDate:       string; // ISO date string
   maturityDate?: string;
   interestRate?: number;
-  notes?:       string;
-  portfolioId?: string; // When provided, use this portfolio instead of user's main one
+  notes?:        string;
+  portfolioId?:  string; // When provided, use this portfolio instead of user's main one
+  /** Manual current price override — used for assets without live prices (e.g. REAL_ESTATE, NPS) */
+  currentPrice?: number;
 }
 
 export interface UpdateHoldingDto {
@@ -160,7 +162,14 @@ export async function computeXirr(holdingId: string, currentValue: number): Prom
   dates.push(new Date());
 
   const rate = xirr(cashflows, dates);
-  return isNaN(rate) ? null : Math.round(rate * 100) / 100;
+  if (isNaN(rate)) return null;
+
+  // DB stores XIRR as Decimal(8,4) (max ~9999.9999). Some portfolios can yield extreme
+  // rates (especially with short holding periods or messy imported cashflows).
+  // Return null instead of crashing background jobs with numeric overflow.
+  if (!isFinite(rate) || Math.abs(rate) >= 10_000) return null;
+
+  return Math.round(rate * 100) / 100;
 }
 
 // ─── Service Functions ────────────────────────────────────────────────────────
@@ -301,7 +310,8 @@ export async function addHolding(userId: string, dto: AddHoldingDto) {
 
   const riskScore    = RISK_SCORES[dto.assetClass] ?? 5;
   const livePrice    = await fetchLivePrice(dto.assetClass, dto.symbol);
-  const currentPrice = livePrice ?? dto.buyPrice;
+  // Priority: live market price → manual override (e.g. real estate estimate) → buy price
+  const currentPrice = livePrice ?? dto.currentPrice ?? dto.buyPrice;
   const currentValue = currentPrice * dto.quantity;
   const { pnlAbsolute, pnlPercent } = calculatePnl(dto.buyPrice * dto.quantity, currentValue);
 

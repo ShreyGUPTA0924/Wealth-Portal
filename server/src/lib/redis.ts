@@ -25,6 +25,7 @@ export const cacheKey = {
 
 let redis: Redis | null = null;
 let redisAvailable = false;
+let loggedConnectionError = false;
 
 export function getRedis(): Redis | null {
   return redis;
@@ -51,13 +52,16 @@ export async function connectRedis(): Promise<void> {
 
     redis.on('connect', () => {
       redisAvailable = true;
+      loggedConnectionError = false;
       console.log('[Redis] Connected ✓');
     });
 
     redis.on('error', (err: Error) => {
       redisAvailable = false;
-      // Only log once to avoid log spam
-      console.warn(`[Redis] Connection error — running without cache: ${err.message}`);
+      if (!loggedConnectionError) {
+        loggedConnectionError = true;
+        console.warn(`[Redis] Connection error — running without cache: ${err.message}`);
+      }
     });
 
     redis.on('close', () => {

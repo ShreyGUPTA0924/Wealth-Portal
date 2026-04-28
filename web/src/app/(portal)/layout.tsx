@@ -19,6 +19,7 @@ import {
   Settings,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
+import apiClient from '@/lib/api-client';
 
 // ─── Nav items ────────────────────────────────────────────────────────────────
 
@@ -267,14 +268,46 @@ function TopBar({ onMenuClick }: { onMenuClick: () => void }) {
 
 export default function PortalLayout({ children }: { children: React.ReactNode }) {
   const router          = useRouter();
-  const { isAuthenticated, _hasHydrated } = useAuthStore();
+  const { isAuthenticated, _hasHydrated, clearUser, setUser } = useAuthStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(false);
 
   useEffect(() => {
     if (_hasHydrated && !isAuthenticated) {
       router.replace('/login');
     }
   }, [_hasHydrated, isAuthenticated, router]);
+
+  useEffect(() => {
+    if (!_hasHydrated || !isAuthenticated) return;
+
+    let cancelled = false;
+    setCheckingSession(true);
+
+    apiClient
+      .get<{ success: boolean; data: { user: { id: string; email: string; fullName: string; avatarUrl?: string | null } } }>('/api/auth/me')
+      .then((res) => {
+        if (cancelled) return;
+        const user = res.data?.data?.user;
+        if (user) {
+          // Keep Zustand in sync with the server session/cookie.
+          setUser(user as any);
+        }
+      })
+      .catch(() => {
+        if (cancelled) return;
+        // LocalStorage says "logged in" but the backend session is invalid → reset and go to login.
+        clearUser();
+        router.replace('/login');
+      })
+      .finally(() => {
+        if (!cancelled) setCheckingSession(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [_hasHydrated, isAuthenticated, clearUser, router, setUser]);
 
   if (!_hasHydrated) {
     return (
@@ -285,6 +318,13 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
   }
 
   if (!isAuthenticated) return null;
+  if (checkingSession) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-border/50">
+        <div className="w-8 h-8 border-2 border-[#3C3489] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#f8f9fa] dark:bg-[#050506]">

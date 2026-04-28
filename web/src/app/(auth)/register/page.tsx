@@ -99,6 +99,8 @@ function passwordStrength(pw: string): number {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
+const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? '';
+
 export default function RegisterPage() {
   const router = useRouter();
   const { setUser, isAuthenticated, user } = useAuthStore();
@@ -188,7 +190,7 @@ export default function RegisterPage() {
         </div>
 
         {/* Google Sign-Up */}
-        <button
+        {googleClientId && <button
           type="button"
           onClick={() => googleLogin()}
           disabled={isGoogleLoading || isLoading}
@@ -208,13 +210,13 @@ export default function RegisterPage() {
             </svg>
           )}
           Continue with Google
-        </button>
+        </button>}
 
-        <div className="flex items-center gap-3 mb-5">
+        {googleClientId && <div className="flex items-center gap-3 mb-5">
           <div className="flex-1 h-px bg-gray-200" />
           <span className="text-xs text-gray-400 font-medium">or create account with email</span>
           <div className="flex-1 h-px bg-gray-200" />
-        </div>
+        </div>}
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           {/* Full Name */}

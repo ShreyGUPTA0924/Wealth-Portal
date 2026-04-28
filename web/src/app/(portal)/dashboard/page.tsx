@@ -418,7 +418,7 @@ function TopMoversSection({ data }: { data: DashboardData }) {
         </div>
         <div className="divide-y divide-gray-50">
           {data.topGainers.length === 0
-            ? <p className="text-xs text-foreground-muted text-center py-4">No data yet</p>
+            ? <p className="text-xs text-foreground-muted text-center py-4">No holdings in profit yet</p>
             : data.topGainers.map((h) => <MoverCard key={h.id} holding={h} positive />)
           }
         </div>
@@ -432,7 +432,7 @@ function TopMoversSection({ data }: { data: DashboardData }) {
         </div>
         <div className="divide-y divide-gray-50">
           {data.topLosers.length === 0
-            ? <p className="text-xs text-foreground-muted text-center py-4">No data yet</p>
+            ? <p className="text-xs text-foreground-muted text-center py-4">No holdings in loss</p>
             : data.topLosers.map((h) => <MoverCard key={h.id} holding={h} positive={false} />)
           }
         </div>

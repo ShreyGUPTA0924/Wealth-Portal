@@ -5,6 +5,9 @@ import { getPrice, type AssetClass } from '../services/market.service';
 import { computeXirr } from '../services/holdings.service';
 import { syncGoalCurrentAmounts } from '../services/goals.service';
 
+let dbUnavailable = false;
+let dbUnavailableWarned = false;
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface HoldingRow {
@@ -63,9 +66,10 @@ async function syncFixedIncomeValues(): Promise<void> {
 
       const xirrVal = await computeXirr(h.id, currentValue);
       if (xirrVal !== null) {
+        const safeXirr = Math.max(-9999.9999, Math.min(9999.9999, xirrVal));
         await prisma.holding.update({
           where: { id: h.id },
-          data: { xirr: xirrVal },
+          data: { xirr: safeXirr },
         });
       }
     } catch (err) {
@@ -162,9 +166,11 @@ async function syncPrices(): Promise<void> {
                 // Recompute XIRR when current value changes
                 const xirrVal = await computeXirr(h.id, currentValue);
                 if (xirrVal !== null) {
+                  // Clamp to Decimal(8,4) range: max ±9999.9999
+                  const safeXirr = Math.max(-9999.9999, Math.min(9999.9999, xirrVal));
                   await prisma.holding.update({
                     where: { id: h.id },
-                    data: { xirr: xirrVal },
+                    data: { xirr: safeXirr },
                   });
                 }
               })
@@ -214,7 +220,12 @@ async function syncPrices(): Promise<void> {
     );
   } catch (err) {
     const error = err as Error;
-    console.error(`[PriceSync] Job failed: ${error.message}`);
+    // If the DB is offline/unreachable (common in dev), don't spam logs every minute.
+    dbUnavailable = true;
+    if (!dbUnavailableWarned) {
+      dbUnavailableWarned = true;
+      console.error(`[PriceSync] Job failed (will be skipped until restart): ${error.message}`);
+    }
     // Never rethrow — a job failure must not crash the server
   }
 }
@@ -234,6 +245,27 @@ let task: ReturnType<typeof cron.schedule> | null = null;
  * (yahoo-finance2 will return stale data anyway, so no point hammering APIs).
  */
 export function startPriceSyncJob(): void {
+  if (process.env['DISABLE_PRICE_SYNC'] === 'true') {
+    console.log('[PriceSync] Disabled via DISABLE_PRICE_SYNC=true');
+    return;
+  }
+
+  // If DB is unreachable at startup, disable the job to keep dev logs clean.
+  prisma
+    .$queryRaw`SELECT 1`
+    .then(() => {
+      dbUnavailable = false;
+      dbUnavailableWarned = false;
+    })
+    .catch((err: unknown) => {
+      dbUnavailable = true;
+      if (!dbUnavailableWarned) {
+        dbUnavailableWarned = true;
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error(`[PriceSync] DB unreachable at startup (job disabled until restart): ${msg}`);
+      }
+    });
+
   const isProd = process.env['NODE_ENV'] === 'production';
 
   // Cron: every minute  →  * * * * *
@@ -243,13 +275,14 @@ export function startPriceSyncJob(): void {
   //       Using */1 3-11 UTC covers 8:30am–5pm IST Mon–Fri.
 
   task = cron.schedule(schedule, () => {
+    if (dbUnavailable) return;
     syncPrices().catch(() => {}); // already handled inside
   });
 
   console.log(`[PriceSync] Job scheduled (${isProd ? 'market hours only' : 'every minute'}) ✓`);
 
   // Run once immediately on startup so prices are fresh on first load
-  void syncPrices();
+  if (!dbUnavailable) void syncPrices();
 }
 
 /** Stop the job (useful for graceful shutdown) */

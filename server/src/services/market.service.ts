@@ -232,8 +232,6 @@ export async function getCryptoPrice(symbol: string): Promise<PriceResult> {
 
 // ─── Gold price (metals.live → converted to INR) ─────────────────────────────
 
-interface MetalsLiveResponse { gold: number }
-
 const TROY_OZ_TO_GRAM = 1 / 31.1035;
 
 export async function getGoldPrice(): Promise<PriceResult> {
@@ -241,20 +239,23 @@ export async function getGoldPrice(): Promise<PriceResult> {
   const cached = await cacheGet<PriceResult>(key);
   if (cached) return cached;
 
-  const [metalRes, usdInr] = await Promise.all([
-    axios.get<MetalsLiveResponse>('https://api.metals.live/v1/spot/gold', { timeout: 8_000 }),
+  const [raw, usdInr] = await Promise.all([
+    yahooFinance.quote('GC=F'),
     getUsdInrRate(),
   ]);
 
-  const inrPerGram = metalRes.data.gold * usdInr * TROY_OZ_TO_GRAM;
+  const q = asYFQuote(raw);
+  if (!q.regularMarketPrice) throw new Error('Yahoo returned no price for GC=F');
+
+  const inrPerGram = q.regularMarketPrice * usdInr * TROY_OZ_TO_GRAM;
 
   const result: PriceResult = {
     symbol:           'GOLD',
     name:             'Gold (24K per gram)',
     price:            Math.round(inrPerGram * 100) / 100,
-    dayChangePercent: null,
-    dayChangeAbs:     null,
-    source:           'metals.live',
+    dayChangePercent: q.regularMarketChangePercent ?? null,
+    dayChangeAbs:     q.regularMarketChange ? Math.round(q.regularMarketChange * usdInr * TROY_OZ_TO_GRAM * 100) / 100 : null,
+    source:           'Yahoo Finance',
     cachedAt:         now(),
   };
 

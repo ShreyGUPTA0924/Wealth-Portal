@@ -74,55 +74,68 @@ export interface DashboardData {
 // ─── AI Insights (rule-based) ─────────────────────────────────────────────────
 
 function generateInsights(
-  holdings:    { name: string; pnlPercent: number | null; assetClass: AssetClass }[],
+  holdings:    { name: string; pnlPercent: number | null; assetClass: AssetClass; currentValue: unknown }[],
   totalValue:  number,
   reminders:   { name: string; daysUntil: number }[]
 ): string[] {
+  // Empty portfolio — return a single onboarding nudge, not generic filler
+  if (totalValue <= 0 || holdings.length === 0) {
+    return [
+      'Add your first holding to start tracking your wealth and get personalised insights.',
+    ];
+  }
+
   const insights: string[] = [];
 
-  // Rule 1: Strong performer
+  // Rule 1: Strong performer (>20% gain)
   const topPerformer = holdings
     .filter((h) => (h.pnlPercent ?? 0) > 20)
     .sort((a, b) => (b.pnlPercent ?? 0) - (a.pnlPercent ?? 0))[0];
   if (topPerformer) {
     insights.push(
-      `${topPerformer.name} is up ${(topPerformer.pnlPercent ?? 0).toFixed(1)}% — strong performer`
+      `${topPerformer.name} is up ${(topPerformer.pnlPercent ?? 0).toFixed(1)}% — consider reviewing your position.`
     );
   }
 
   // Rule 2: Upcoming maturity
   const upcoming = reminders[0];
   if (upcoming) {
-    insights.push(`${upcoming.name} matures in ${upcoming.daysUntil} days — plan your next move`);
+    insights.push(`${upcoming.name} matures in ${upcoming.daysUntil} days — plan your reinvestment strategy now.`);
   }
 
-  // Rule 3: Equity concentration
+  // Rule 3: Equity concentration (by value, not by count)
   const equityClasses: AssetClass[] = ['STOCK', 'MUTUAL_FUND'];
-  let equityValue = 0;
-  for (const h of holdings) {
-    if (equityClasses.includes(h.assetClass)) {
-      equityValue += totalValue > 0 ? 1 : 0; // counting done via percent below
-    }
-  }
-  // Recalculate properly
-  const equityHoldings = holdings.filter((h) => equityClasses.includes(h.assetClass));
-  const equityPct = totalValue > 0
-    ? (equityHoldings.length / Math.max(holdings.length, 1)) * 100
-    : 0;
-  void equityValue; // suppress unused warning
-  if (equityPct > 75) {
-    insights.push('Your equity allocation is high — consider diversifying into debt or gold');
+  const equityValue = holdings
+    .filter((h) => equityClasses.includes(h.assetClass))
+    .reduce((s, h) => s + toNum(h.currentValue), 0);
+  const equityPct = totalValue > 0 ? (equityValue / totalValue) * 100 : 0;
+  if (equityPct > 80) {
+    insights.push(`Equity makes up ${equityPct.toFixed(0)}% of your portfolio — consider adding debt, gold, or fixed-income assets to reduce risk.`);
+  } else if (equityPct < 20 && holdings.length >= 2) {
+    insights.push(`Your equity exposure is only ${equityPct.toFixed(0)}% — for long-term wealth creation consider adding diversified equity mutual funds.`);
   }
 
-  // Fallback insights
+  // Rule 4: Underperformer alert (<-10%)
+  const bigLoser = holdings
+    .filter((h) => (h.pnlPercent ?? 0) < -10)
+    .sort((a, b) => (a.pnlPercent ?? 0) - (b.pnlPercent ?? 0))[0];
+  if (bigLoser && !insights.some((i) => i.includes(bigLoser.name))) {
+    insights.push(
+      `${bigLoser.name} is down ${Math.abs(bigLoser.pnlPercent ?? 0).toFixed(1)}% — review if it still fits your investment thesis.`
+    );
+  }
+
+  // Fallback insights (used only when rules don't fire enough)
   const fallbacks = [
-    'Review your portfolio monthly to stay on track with your financial goals',
-    'Consider setting up SIPs to automate your investments',
-    'Diversification across asset classes reduces overall portfolio risk',
+    'Review your portfolio monthly to stay aligned with your financial goals.',
+    'Consider setting up automated SIPs to benefit from rupee cost averaging.',
+    'Diversifying across asset classes — equity, debt, gold — reduces overall portfolio volatility.',
+    'Direct mutual fund plans have lower expense ratios; check if you are invested in direct plans.',
   ];
 
-  while (insights.length < 3) {
-    insights.push(fallbacks[insights.length] ?? fallbacks[0]!);
+  for (const fb of fallbacks) {
+    if (insights.length >= 3) break;
+    insights.push(fb);
   }
 
   return insights.slice(0, 3);
@@ -194,14 +207,16 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
   const pnlAbsolute   = currentValue - totalInvested;
   const pnlPercent    = totalInvested > 0 ? (pnlAbsolute / totalInvested) * 100 : 0;
 
-  // Mock intra-day & period changes derived from portfolio seed
+  // Period changes: zero when no portfolio, otherwise derive from a portfolio seed
   const seed = Math.floor(totalInvested / 1000) % 10;
-  const change = {
-    today:    mockChangePercent(seed + 1, 0.3),
-    oneWeek:  mockChangePercent(seed + 2, 0.8),
-    oneMonth: mockChangePercent(seed + 3, 2.0),
-    oneYear:  mockChangePercent(seed + 4, 8.0),
-  };
+  const change = currentValue > 0
+    ? {
+        today:    mockChangePercent(seed + 1, 0.3),
+        oneWeek:  mockChangePercent(seed + 2, 0.8),
+        oneMonth: mockChangePercent(seed + 3, 2.0),
+        oneYear:  mockChangePercent(seed + 4, 8.0),
+      }
+    : { today: 0, oneWeek: 0, oneMonth: 0, oneYear: 0 };
 
   // ── Allocation ────────────────────────────────────────────────────────────
   const byClass = new Map<string, number>();
@@ -216,8 +231,6 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
   })).sort((a, b) => b.value - a.value);
 
   // ── Top Gainers / Losers ──────────────────────────────────────────────────
-  const withPnl = holdings.filter((h) => h.pnlPercent != null);
-  const byPnl   = [...withPnl].sort((a, b) => toNum(b.pnlPercent) - toNum(a.pnlPercent));
   const mapHolding = (h: typeof holdings[number]) => ({
     id:           h.id,
     name:         h.name,
@@ -225,8 +238,19 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
     pnlPercent:   toNum(h.pnlPercent),
     currentValue: toNum(h.currentValue),
   });
-  const topGainers = byPnl.slice(0, 3).map(mapHolding);
-  const topLosers  = byPnl.reverse().slice(0, 3).map(mapHolding);
+  const withPnl = holdings.filter((h) => h.pnlPercent != null);
+  // Only actual gainers (pnlPercent > 0), sorted best first
+  const topGainers = withPnl
+    .filter((h) => toNum(h.pnlPercent) > 0)
+    .sort((a, b) => toNum(b.pnlPercent) - toNum(a.pnlPercent))
+    .slice(0, 5)
+    .map(mapHolding);
+  // Only actual losers (pnlPercent < 0), sorted worst first
+  const topLosers = withPnl
+    .filter((h) => toNum(h.pnlPercent) < 0)
+    .sort((a, b) => toNum(a.pnlPercent) - toNum(b.pnlPercent))
+    .slice(0, 5)
+    .map(mapHolding);
 
   // ── Upcoming reminders (FD/SGB maturing within 30 days) ──────────────────
   const thirtyDaysLater = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
@@ -295,9 +319,10 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
 
   // ── AI Insights ───────────────────────────────────────────────────────────
   const insightHoldings = holdings.map((h) => ({
-    name:       h.name,
-    pnlPercent: h.pnlPercent ? toNum(h.pnlPercent) : null,
-    assetClass: h.assetClass,
+    name:         h.name,
+    pnlPercent:   h.pnlPercent ? toNum(h.pnlPercent) : null,
+    assetClass:   h.assetClass,
+    currentValue: h.currentValue,
   }));
   const reminderSeeds = maturingHoldings.map((h) => ({
     name:       h.name,

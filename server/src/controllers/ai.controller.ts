@@ -339,6 +339,20 @@ export const analyse = wrap(async (req, res) => {
     return;
   }
 
+  // Build allocation breakdown by asset class
+  const allocationMap = new Map<string, number>();
+  for (const h of portfolio.holdings) {
+    const cls = h.assetClass as string;
+    allocationMap.set(cls, (allocationMap.get(cls) ?? 0) + Number(h['currentValue'] ?? 0));
+  }
+  const totalCurrentValue = Number(portfolio.currentValue) || 0;
+  const allocationArray = Array.from(allocationMap.entries()).map(([assetClass, value]) => ({
+    assetClass,
+    value,
+    currentValue: value,
+    percent: totalCurrentValue > 0 ? (value / totalCurrentValue) * 100 : 0,
+  }));
+
   const portfolioPayload = {
     holdings: (portfolio.holdings as Array<Record<string, unknown>>).map((h) => ({
       ...h,
@@ -347,9 +361,9 @@ export const analyse = wrap(async (req, res) => {
       pnlAbsolute:   Number(h['pnlAbsolute']   ?? 0),
       pnlPercent:    Number(h['pnlPercent']    ?? 0),
     })),
-    currentValue: Number(portfolio.currentValue),
+    currentValue:  totalCurrentValue,
     totalInvested: Number(portfolio.totalInvested),
-    allocation: [],
+    allocation:    allocationArray,
   };
 
   const goalsPayload = goals.map((g) => ({
@@ -452,10 +466,24 @@ export const getHealthScore = wrap(async (req, res) => {
     where: { userId, monthYear: { gte: threeMonthsAgo } },
   });
 
-  if (!portfolio) {
-    ok(res, { overall: 0, breakdown: { diversification: 0, goals: 0, quality: 0, discipline: 0 }, summary: 'Add holdings to get your health score.' });
+  if (!portfolio || portfolio.holdings.length === 0) {
+    ok(res, { overall: 0, breakdown: { diversification: 0, goals: 0, quality: 0, discipline: 0 }, summary: 'Add your first holding to start computing your financial health score.' });
     return;
   }
+
+  // Build allocation breakdown by asset class
+  const allocationMap2 = new Map<string, number>();
+  for (const h of portfolio.holdings) {
+    const cls = h.assetClass as string;
+    allocationMap2.set(cls, (allocationMap2.get(cls) ?? 0) + Number(h['currentValue'] ?? 0));
+  }
+  const totalCV = Number(portfolio.currentValue) || 0;
+  const allocationArray2 = Array.from(allocationMap2.entries()).map(([assetClass, value]) => ({
+    assetClass,
+    value,
+    currentValue: value,
+    percent: totalCV > 0 ? (value / totalCV) * 100 : 0,
+  }));
 
   const portfolioPayload = {
     holdings: (portfolio.holdings as Array<Record<string, unknown>>).map((h) => ({
@@ -464,8 +492,8 @@ export const getHealthScore = wrap(async (req, res) => {
       currentValue:  Number(h['currentValue']  ?? 0),
       pnlPercent:    Number(h['pnlPercent']    ?? 0),
     })),
-    currentValue: Number(portfolio.currentValue),
-    allocation: [],
+    currentValue: totalCV,
+    allocation:   allocationArray2,
   };
 
   try {

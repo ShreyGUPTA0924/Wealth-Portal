@@ -24,21 +24,33 @@ def _clamp(val: float) -> float:
 
 def _score_diversification(portfolio: dict) -> float:
     allocation = portfolio.get("allocation", [])
-    asset_classes = {a.get("assetClass") for a in allocation if a.get("currentValue", 0) > 0}
-    score = min(len(asset_classes) * 10, 100)
+    total_value = float(portfolio.get("currentValue") or 0)
+    # No portfolio → 0
+    if total_value <= 0:
+        return 0.0
+    asset_classes = {a.get("assetClass") for a in allocation if float(a.get("value") or a.get("currentValue") or 0) > 0}
+    # 1 class = 10, 2 = 25, 3 = 45, 4 = 60, 5 = 75, 6+ = 90 (capped at 90 to leave room for improvement)
+    thresholds = [0, 10, 25, 45, 60, 75, 90]
+    score = thresholds[min(len(asset_classes), len(thresholds) - 1)]
     return _clamp(float(score))
 
 
 def _score_goal_progress(goals: List[dict]) -> float:
+    # No goals set → 0 (user hasn't engaged with goal planning)
     if not goals:
-        return 50.0
+        return 0.0
     total_pct = sum(float(g.get("progressPercent", 0)) for g in goals)
     return _clamp(total_pct / len(goals))
 
 
 def _score_portfolio_quality(portfolio: dict) -> float:
-    score = 70.0
+    total_value = float(portfolio.get("currentValue") or 0)
     holdings = portfolio.get("holdings", [])
+    # Empty portfolio → 0
+    if total_value <= 0 or not holdings:
+        return 0.0
+
+    score = 70.0
 
     for h in holdings:
         if h.get("assetClass") == "MUTUAL_FUND":
@@ -48,29 +60,28 @@ def _score_portfolio_quality(portfolio: dict) -> float:
             elif er > 1.0:
                 score -= 5
 
-    total_value = float(portfolio.get("currentValue") or 0)
-    if total_value > 0:
-        equity_classes = {"STOCK", "MUTUAL_FUND"}
-        equity_value = sum(
-            float(a.get("currentValue") or 0)
-            for a in portfolio.get("allocation", [])
-            if a.get("assetClass") in equity_classes
-        )
-        equity_pct = (equity_value / total_value) * 100
-        risk_profile = portfolio.get("riskProfile", "MODERATE")
-        if risk_profile == "CONSERVATIVE" and equity_pct > 60:
-            score -= 15
-        elif risk_profile == "AGGRESSIVE" and equity_pct < 60:
-            score -= 10
-        elif risk_profile == "MODERATE" and (equity_pct < 40 or equity_pct > 75):
-            score -= 10
+    equity_classes = {"STOCK", "MUTUAL_FUND"}
+    equity_value = sum(
+        float(a.get("value") or a.get("currentValue") or 0)
+        for a in portfolio.get("allocation", [])
+        if a.get("assetClass") in equity_classes
+    )
+    equity_pct = (equity_value / total_value) * 100
+    risk_profile = portfolio.get("riskProfile", "MODERATE")
+    if risk_profile == "CONSERVATIVE" and equity_pct > 60:
+        score -= 15
+    elif risk_profile == "AGGRESSIVE" and equity_pct < 60:
+        score -= 10
+    elif risk_profile == "MODERATE" and (equity_pct < 40 or equity_pct > 75):
+        score -= 10
 
     return _clamp(score)
 
 
 def _score_financial_discipline(checklist_history: List[dict]) -> float:
+    # No checklist set up → 0 (user hasn't set up bill tracking)
     if not checklist_history:
-        return 50.0
+        return 0.0
 
     three_months_ago = datetime.now(timezone.utc) - timedelta(days=90)
     recent = [
@@ -79,7 +90,7 @@ def _score_financial_discipline(checklist_history: List[dict]) -> float:
     ]
 
     if not recent:
-        return 50.0
+        return 0.0
 
     total = len(recent)
     paid = sum(1 for e in recent if e.get("isPaid", False))
