@@ -4,11 +4,11 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, CartesianGrid, ComposedChart, Line, Legend
+  AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine,
 } from 'recharts';
 import {
   ArrowLeft, Pencil, Trash2, Target, Umbrella, Home,
-  GraduationCap, Plane, Shield, Heart, AlertCircle, Plus, X, Check, Activity,
+  GraduationCap, Plane, Shield, Heart, AlertCircle, Plus, X, Check,
 } from 'lucide-react';
 import apiClient from '@/lib/api-client';
 import { getErrorMessage } from '@/lib/api-client';
@@ -183,73 +183,6 @@ function GoalSimulator({ goal }: { goal: GoalDetail }) {
           </div>
         </div>
       ) : null}
-    </div>
-  );
-}
-
-// ─── AI Monte Carlo Simulation ────────────────────────────────────────────────
-
-function MonteCarloSimulation({ goalId, targetAmount }: { goalId: string; targetAmount: number }) {
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['ai-monte-carlo', goalId],
-    queryFn:  () => apiClient.post('/api/ai/monte-carlo', { goalId }).then((r) => r.data.data),
-    staleTime: 60_000,
-  });
-
-  if (isLoading) return <Skeleton className="h-64 w-full mt-5" />;
-  if (error || !data) return null;
-
-  return (
-    <div className="bg-background-card rounded-2xl border border-brand/20 p-6 relative overflow-hidden mt-5 shadow-sm shadow-brand/5">
-      <div className="absolute top-0 right-0 w-32 h-32 bg-brand/10 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2 pointer-events-none" />
-      
-      <div className="flex items-center justify-between mb-4 relative z-10">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-brand/10 flex items-center justify-center">
-            <Activity className="w-4 h-4 text-brand" />
-          </div>
-          <div>
-            <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-              Wealth Projection
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-premium-gradient text-white">AI POWERED</span>
-            </h3>
-            <p className="text-xs text-foreground-muted mt-0.5">Monte Carlo Simulation (10,000 paths)</p>
-          </div>
-        </div>
-        <div className="text-right">
-           <p className="text-xs text-foreground-muted">Success Probability</p>
-           <p className={`text-xl font-bold ${data.probability >= 80 ? 'text-green-500' : data.probability >= 50 ? 'text-amber-500' : 'text-red-500'}`}>
-              {data.probability.toFixed(1)}%
-           </p>
-        </div>
-      </div>
-
-      <div className="h-64 mt-4">
-        <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={data.chart_data} margin={{ top: 5, right: 5, bottom: 0, left: 0 }}>
-            <defs>
-              <linearGradient id="colorMedian" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.3}/>
-                <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0}/>
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" opacity={0.5} />
-            <XAxis dataKey="year" tick={{ fontSize: 10, fill: 'var(--foreground-muted)' }} tickLine={false} axisLine={false} />
-            <YAxis tickFormatter={(v: number) => formatInr(v)} tick={{ fontSize: 10, fill: 'var(--foreground-muted)' }} tickLine={false} axisLine={false} width={60} />
-            <Tooltip
-              formatter={(v: any) => formatInr(Number(v))}
-              contentStyle={{ borderRadius: '12px', border: '1px solid var(--border)', backgroundColor: 'rgba(var(--background-card-rgb), 0.9)', backdropFilter: 'blur(8px)' }}
-            />
-            <Legend wrapperStyle={{ fontSize: '10px' }} />
-            
-            <Area type="monotone" dataKey="p90" name="Best Case (90th %ile)" stroke="none" fill="#10B981" fillOpacity={0.1} />
-            <Area type="monotone" dataKey="p10" name="Worst Case (10th %ile)" stroke="none" fill="#EF4444" fillOpacity={0.1} />
-            <Area type="monotone" dataKey="median" name="Median Path" stroke="#8B5CF6" strokeWidth={3} fill="url(#colorMedian)" />
-            
-            <ReferenceLine y={targetAmount} stroke="#F59E0B" strokeDasharray="3 3" label={{ position: 'insideTopLeft', value: 'Target Goal', fill: '#F59E0B', fontSize: 10 }} />
-          </ComposedChart>
-        </ResponsiveContainer>
-      </div>
     </div>
   );
 }
@@ -504,9 +437,6 @@ export default function GoalDetailPage() {
 
       {/* What-if simulator */}
       <GoalSimulator goal={goal} />
-
-      {/* AI Monte Carlo Simulator */}
-      <MonteCarloSimulation goalId={goal.id} targetAmount={goal.targetAmount} />
 
       {/* Linked holdings */}
       <div className="bg-background-card rounded-2xl border border-border p-6">

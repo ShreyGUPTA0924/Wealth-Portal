@@ -737,67 +737,7 @@ function RecentTxnsSection({ txns }: { txns: DashboardData['recentTransactions']
   );
 }
 
-// ─── Risk Metrics (VaR / CVaR) ────────────────────────────────────────────────
 
-function RiskMetricsSection({ data }: { data: any }) {
-  if (!data) return null;
-
-  return (
-    <Card className="p-6 h-full relative overflow-hidden group bg-background-card/40 backdrop-blur-3xl border border-white/5 hover:border-brand/40 transition-all duration-500 hover:shadow-[0_0_40px_-15px_rgba(139,92,246,0.3)]">
-      <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-red-500/10 rounded-full blur-[100px] transform -translate-x-1/2 -translate-y-1/2 pointer-events-none transition-transform duration-1000 group-hover:scale-125 group-hover:bg-red-500/20" />
-      
-      <div className="flex items-center justify-between mb-8 relative z-10">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center relative shadow-[0_0_20px_rgba(239,68,68,0.3)]">
-            <div className="absolute inset-0 rounded-xl bg-red-500/20 animate-pulse" />
-            <ShieldAlert className="w-5 h-5 text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
-          </div>
-          <div>
-            <h3 className="text-[12px] font-black text-foreground uppercase tracking-widest">Advanced Risk Metrics</h3>
-            <p className="text-[10px] text-foreground-muted font-bold tracking-wider mt-0.5">Statistical Vulnerability (95% Confidence)</p>
-          </div>
-        </div>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
-         <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-5 border border-white/10 hover:bg-white/10 transition-colors relative overflow-hidden">
-            <div className="absolute left-0 top-0 w-1 h-full bg-gradient-to-b from-red-400 to-red-600" />
-            <p className="text-[10px] font-black text-red-400 uppercase tracking-widest mb-2 flex justify-between">
-              <span>1-Month VaR (95%)</span>
-              <span className="text-white/50">{data.var_95_pct.toFixed(2)}% of port.</span>
-            </p>
-            <p className="text-3xl font-black text-white tracking-tighter mb-4">{formatInr(data.var_amount)}</p>
-            
-            {/* High-tech Progress Bar representation */}
-            <div className="h-1.5 w-full bg-black/40 rounded-full overflow-hidden shadow-inner mb-3">
-               <div className="h-full bg-gradient-to-r from-red-600 to-red-400 rounded-full relative" style={{ width: `${Math.min(100, data.var_95_pct * 3)}%` }}>
-                  <div className="absolute right-0 top-0 bottom-0 w-2 bg-white/50 blur-[2px]" />
-               </div>
-            </div>
-            
-            <p className="text-[10px] font-medium text-gray-400 leading-relaxed">{data.message}</p>
-         </div>
-
-         <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-5 border border-white/10 hover:bg-white/10 transition-colors relative overflow-hidden">
-            <div className="absolute left-0 top-0 w-1 h-full bg-gradient-to-b from-amber-400 to-amber-600" />
-            <p className="text-[10px] font-black text-amber-400 uppercase tracking-widest mb-2 flex justify-between">
-              <span>Conditional VaR (CVaR)</span>
-              <span className="text-white/50">{data.cvar_95_pct.toFixed(2)}% of port.</span>
-            </p>
-            <p className="text-3xl font-black text-white tracking-tighter mb-4">{formatInr(data.cvar_amount)}</p>
-            
-            <div className="h-1.5 w-full bg-black/40 rounded-full overflow-hidden shadow-inner mb-3">
-               <div className="h-full bg-gradient-to-r from-amber-600 to-amber-400 rounded-full relative" style={{ width: `${Math.min(100, data.cvar_95_pct * 3)}%` }}>
-                  <div className="absolute right-0 top-0 bottom-0 w-2 bg-white/50 blur-[2px]" />
-               </div>
-            </div>
-            
-            <p className="text-[10px] font-medium text-gray-400 leading-relaxed">Expected loss severity if the 5% worst-case scenario occurs.</p>
-         </div>
-      </div>
-    </Card>
-  );
-}
 
 // ─── Loading Skeleton ─────────────────────────────────────────────────────────
 
@@ -828,10 +768,7 @@ export default function DashboardPage() {
     refetchInterval: 60_000,
   });
 
-  const { data: aiRiskMetrics } = useQuery({
-    queryKey: ['ai-risk-metrics'],
-    queryFn:  () => apiClient.get('/api/ai/risk-metrics').then((r) => r.data.data),
-  });
+
 
   if (isLoading) return <DashboardSkeleton />;
 
@@ -884,11 +821,7 @@ export default function DashboardPage() {
         <AiInsightsSection insights={data.aiInsights} />
       </MotionItem>
 
-      <BentoGrid>
-        <BentoItem className="md:col-span-3 xl:col-span-4">
-          <RiskMetricsSection data={aiRiskMetrics} />
-        </BentoItem>
-      </BentoGrid>
+
 
       {/* Bottom Grid: Checklist, Goals, Reminders, Transactions */}
       <BentoGrid>

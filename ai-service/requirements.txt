@@ -5,7 +5,3 @@ python-dotenv
 httpx
 pdfplumber
 python-multipart
-numpy
-scipy
-pandas
-scikit-learn
