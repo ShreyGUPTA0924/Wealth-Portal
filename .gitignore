@@ -17,6 +17,8 @@ web/build/
 
 # Python
 ai-service/venv/
+ai-service/.venv/
+.venv/
 ai-service/__pycache__/
 **/__pycache__/
 ai-service/*.pyc
