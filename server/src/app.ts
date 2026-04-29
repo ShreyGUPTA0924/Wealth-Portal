@@ -51,9 +51,6 @@ app.use(
   })
 );
 
-// Explicitly handle OPTIONS preflight for all routes
-app.options('*', cors());
-
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
