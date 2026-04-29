@@ -34,17 +34,25 @@ const allowedOrigins = process.env['ALLOWED_ORIGINS']
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin) || NODE_ENV === 'development') {
-        callback(null, true);
-      } else {
-        callback(new Error(`CORS: origin '${origin}' not allowed`));
-      }
+      // Allow requests with no origin (Postman, mobile, server-to-server)
+      if (!origin) return callback(null, true);
+      // Always allow in development
+      if (NODE_ENV === 'development') return callback(null, true);
+      // Allow any *.vercel.app subdomain (covers all preview + production deployments)
+      if (origin.endsWith('.vercel.app')) return callback(null, true);
+      // Allow explicitly listed origins from env
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      // Block everything else
+      callback(new Error(`CORS: origin '${origin}' not allowed`));
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   })
 );
+
+// Explicitly handle OPTIONS preflight for all routes
+app.options('*', cors());
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
