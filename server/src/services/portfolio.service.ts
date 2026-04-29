@@ -38,28 +38,26 @@ function toNum(d: unknown): number {
 /**
  * Return the portfolio summary for the primary portfolio of a user.
  * Allocation is grouped by asset class.
+ * Aggregates from holdings directly to stay in sync with holdings list.
  */
 export async function getPortfolioSummary(userId: string): Promise<PortfolioSummary> {
   const portfolio = await prisma.portfolio.findFirst({
-    where:   { userId, familyMemberId: null },
-    include: {
-      holdings: {
-        where: { isActive: true },
-        select: {
-          assetClass:   true,
-          totalInvested: true,
-          currentValue:  true,
-          pnlAbsolute:   true,
-        },
-      },
-    },
+    where: { userId, familyMemberId: null },
   });
 
   if (!portfolio) {
     throw Object.assign(new Error('Portfolio not found'), { statusCode: 404 });
   }
 
-  const holdings = portfolio.holdings;
+  // Fetch holdings from main portfolio (same scope as portfolio page)
+  const holdings = await prisma.holding.findMany({
+    where: { portfolioId: portfolio.id, isActive: true },
+    select: {
+      assetClass:   true,
+      totalInvested: true,
+      currentValue:  true,
+    },
+  });
 
   // Aggregate totals
   let totalInvested = 0;

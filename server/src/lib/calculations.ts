@@ -30,8 +30,8 @@ export function xirr(cashflows: number[], dates: Date[]): number {
       0
     );
 
-  // Try multiple starting guesses in case of non-convergence
-  for (const guess of [0.1, 0.0, -0.1, 0.5, -0.5]) {
+  // Try multiple starting guesses including extreme returns (crypto, etc.)
+  for (const guess of [0.1, 0.0, -0.1, 0.5, -0.5, 1, 2, 5, 10]) {
     let rate = guess;
 
     for (let iter = 0; iter < MAX_ITERATIONS; iter++) {

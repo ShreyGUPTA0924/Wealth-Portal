@@ -444,13 +444,17 @@ export async function getNetWorthHistory(userId: string, period: string) {
   const days = cfg.days;
   const now  = new Date();
 
+  // No holdings / no invested value → return empty history (UI shows an empty-state)
+  const hasData = totalInvested > 0 || currentValue > 0;
+  if (!hasData) {
+    return { period: cfg.label, dataPoints: [], isPlaceholder: true };
+  }
+
   // Generate smooth growth curve from invested → current
   const dataPoints: { date: string; value: number }[] = [];
   const steps = Math.min(days, 60);
-  // When no data, use a placeholder curve (0→100) so the chart always renders visibly
-  const hasData = totalInvested > 0 || currentValue > 0;
-  const startValue = hasData ? totalInvested * 0.9 : 0;
-  const endValue   = hasData ? currentValue : 100;
+  const startValue = totalInvested * 0.9;
+  const endValue   = currentValue;
 
   for (let i = 0; i <= steps; i++) {
     const t     = i / steps;
@@ -463,5 +467,5 @@ export async function getNetWorthHistory(userId: string, period: string) {
     });
   }
 
-  return { period: cfg.label, dataPoints, isPlaceholder: !hasData };
+  return { period: cfg.label, dataPoints, isPlaceholder: false };
 }

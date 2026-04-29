@@ -140,23 +140,6 @@ const HISTORY_PERIODS = [
   { label: '1Y',    value: '1Y' },
 ] as const;
 
-/** Generate fallback mock data when API returns empty */
-function generateFallbackHistory(currentNetWorth: number, days = 30): { date: string; value: number }[] {
-  const points = [];
-  const now = new Date();
-  for (let i = days; i >= 0; i--) {
-    const d = new Date(now);
-    d.setDate(d.getDate() - i);
-    const jitter = (Math.random() - 0.48) * 0.015;
-    const base   = currentNetWorth * (1 - (i / days) * 0.06);
-    points.push({
-      date:  d.toISOString().split('T')[0] as string,
-      value: Math.max(0, Math.round(base * (1 + jitter))),
-    });
-  }
-  return points;
-}
-
 function NetWorthSection({ data }: { data: DashboardData }) {
   const [period, setPeriod] = useState<'Today' | '1W' | '1M' | '1Y'>('1M');
   const apiPeriod = period === '1Y' ? '1Y' : '1M';
@@ -192,9 +175,8 @@ function NetWorthSection({ data }: { data: DashboardData }) {
 
   const rawPoints   = historyData?.dataPoints ?? [];
   const isPlaceholder = historyData?.isPlaceholder ?? false;
-  const chartData   = rawPoints.length > 0
-    ? rawPoints
-    : generateFallbackHistory(Math.max(data.netWorth.current ?? 0, 1), period === '1Y' ? 365 : 30);
+  const chartData   = rawPoints;
+  const isEmptyPortfolio = (data.netWorth.invested ?? 0) <= 0 && (data.netWorth.current ?? 0) <= 0;
 
   const bestPerformer = [...(data.topGainers ?? [])].sort((a, b) => b.pnlPercent - a.pnlPercent)[0];
   const stats = [
@@ -269,12 +251,22 @@ function NetWorthSection({ data }: { data: DashboardData }) {
       </div>
 
       <div className="mt-6 flex-1 min-h-[200px] relative" style={{ height: 280 }}>
-        {isPlaceholder && (
-          <p className="absolute top-0 right-0 text-[10px] text-foreground-muted/70 z-10">
-            Sample trend — add holdings to see your net worth
-          </p>
-        )}
-        {chartData.length === 0 ? (
+        {(isPlaceholder || isEmptyPortfolio) && chartData.length === 0 ? (
+          <div className="h-full w-full rounded-3xl border border-border bg-background-card/50 flex items-center justify-center text-center p-6">
+            <div className="max-w-sm">
+              <p className="text-sm font-semibold text-foreground">No net worth data yet</p>
+              <p className="text-xs text-foreground-muted mt-1">
+                Add your first holding to start tracking your net worth over time.
+              </p>
+              <Link
+                href="/portfolio/add"
+                className="inline-flex items-center gap-2 mt-4 text-xs font-bold text-white bg-gradient-stripe hover:opacity-90 px-4 py-2 rounded-xl transition-opacity shadow-lg shadow-brand/20"
+              >
+                <Plus className="w-4 h-4" /> Add Holding
+              </Link>
+            </div>
+          </div>
+        ) : chartData.length === 0 ? (
           <Skeleton className="h-full w-full" />
         ) : (
           <ResponsiveContainer width="100%" height="100%">

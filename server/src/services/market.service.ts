@@ -45,6 +45,8 @@ interface YFSearchResult {
     longname?: string;
     shortname?: string;
     quoteType?: string;
+    exchange?: string;
+    exchDisp?: string;
   }>;
 }
 
@@ -289,24 +291,67 @@ export async function searchSymbols(query: string, assetClass: string): Promise<
     try {
       const raw = await yahooFinance.search(query, { newsCount: 0 });
       const res = raw as unknown as YFSearchResult;
-      const quotes = (res.quotes ?? [])
-        .filter(
-          (q) =>
-            q.quoteType === 'EQUITY' &&
-            typeof q.symbol === 'string' &&
-            (q.symbol.endsWith('.NS') || q.symbol.endsWith('.BO'))
-        )
-        .slice(0, 10)
-        .map((q) => ({
-          symbol:     (q.symbol as string).replace(/\.(NS|BO)$/, ''),
-          name:       (q.longname ?? q.shortname ?? q.symbol ?? '') as string,
-          assetClass: 'STOCK',
-          exchange:   (q.symbol as string).endsWith('.NS') ? 'NSE' : 'BSE',
-        }));
 
-      await cacheSet(key, quotes, TTL.SEARCH);
-      return quotes;
-    } catch {
+      const equities = (res.quotes ?? []).filter(
+        (q) => q.quoteType === 'EQUITY' && typeof q.symbol === 'string'
+      );
+
+      // Map every equity result, labeling exchange. Strip .NS/.BO so the
+      // displayed symbol stays clean (e.g. HDFCBANK instead of HDFCBANK.NS).
+      // Non-Indian listings keep their original symbol (e.g. HDB on NYSE).
+      const mapped = equities.map((q) => {
+        const sym = q.symbol as string;
+        const isNS = sym.endsWith('.NS');
+        const isBO = sym.endsWith('.BO');
+        const exchange = isNS
+          ? 'NSE'
+          : isBO
+          ? 'BSE'
+          : (q.exchDisp ?? q.exchange ?? '').toString();
+        return {
+          symbol: isNS || isBO ? sym.replace(/\.(NS|BO)$/, '') : sym,
+          name: (q.longname ?? q.shortname ?? sym) as string,
+          assetClass: 'STOCK',
+          exchange,
+        };
+      });
+
+      // Prioritise Indian listings first so they appear at the top of the dropdown
+      const isIndian = (e: SearchResult) => e.exchange === 'NSE' || e.exchange === 'BSE';
+      const sorted = [...mapped].sort((a, b) => {
+        const ai = isIndian(a) ? 0 : 1;
+        const bi = isIndian(b) ? 0 : 1;
+        return ai - bi;
+      });
+
+      // Fallback: if Yahoo returned no equities at all (rare), try once
+      // more with a ".NS" suffix to catch direct ticker queries
+      let final = sorted;
+      if (final.length === 0) {
+        try {
+          const raw2 = await yahooFinance.search(`${query}.NS`, { newsCount: 0 });
+          const res2 = raw2 as unknown as YFSearchResult;
+          final = (res2.quotes ?? [])
+            .filter((q) => q.quoteType === 'EQUITY' && typeof q.symbol === 'string')
+            .map((q) => {
+              const sym = q.symbol as string;
+              return {
+                symbol: sym.replace(/\.(NS|BO)$/, ''),
+                name: (q.longname ?? q.shortname ?? sym) as string,
+                assetClass: 'STOCK',
+                exchange: sym.endsWith('.BO') ? 'BSE' : 'NSE',
+              };
+            });
+        } catch (e) {
+          console.warn('[searchSymbols] .NS fallback failed:', (e as Error).message);
+        }
+      }
+
+      const limited = final.slice(0, 10);
+      await cacheSet(key, limited, TTL.SEARCH);
+      return limited;
+    } catch (err) {
+      console.warn('[searchSymbols] Yahoo search failed:', (err as Error).message);
       return [];
     }
   }

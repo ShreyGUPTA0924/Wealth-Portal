@@ -94,16 +94,15 @@ function derivePnl(
   return null;
 }
 
+/** Always compute from currentValue/totalInvested to avoid DB cap (9999.9999) display. */
 function derivePnlPct(
-  stored:        unknown,
+  _stored:       unknown,
   currentValue:  unknown,
   totalInvested: unknown
 ): number | null {
-  const s  = toNum(stored);
-  if (s !== 0) return s;
   const cv = toNum(currentValue);
   const ti = toNum(totalInvested);
-  if (cv > 0 && ti > 0) return ((cv - ti) / ti) * 100;
+  if (ti > 0) return ((cv - ti) / ti) * 100;
   return null;
 }
 
@@ -175,9 +174,10 @@ export async function computeXirr(holdingId: string, currentValue: number): Prom
 // ─── Service Functions ────────────────────────────────────────────────────────
 
 export async function getHoldings(
-  userId:     string,
-  assetClass?: AssetClass,
-  sortBy?:     string
+  userId:       string,
+  assetClass?:  AssetClass,
+  sortBy?:      string,
+  portfolioId?: string // when omitted, use main portfolio
 ) {
   const orderBy = (() => {
     switch (sortBy) {
@@ -188,10 +188,15 @@ export async function getHoldings(
     }
   })();
 
+  const portfolio = portfolioId
+    ? await prisma.portfolio.findFirst({ where: { id: portfolioId, userId } })
+    : await prisma.portfolio.findFirst({ where: { userId, familyMemberId: null } });
+
   const holdings = await prisma.holding.findMany({
     where: {
       userId,
       isActive: true,
+      ...(portfolio ? { portfolioId: portfolio.id } : {}),
       ...(assetClass ? { assetClass } : {}),
     },
     orderBy,
@@ -200,25 +205,26 @@ export async function getHoldings(
     },
   });
 
-  const portfolio = await prisma.portfolio.findFirst({
-    where: { userId, familyMemberId: null },
-  });
+  // Compute total from actual holdings for correct weight (avoid stale portfolio.currentValue)
+  const totalCurrentValue = holdings.reduce((sum, h) => sum + toNum(h.currentValue), 0);
 
-  const totalCurrentValue = toNum(portfolio?.currentValue);
-
-  return holdings.map((h) => ({
-    id:            h.id,
-    assetClass:    h.assetClass,
-    symbol:        h.symbol,
-    name:          h.name,
-    quantity:      toNum(h.quantity),
-    avgBuyPrice:   toNum(h.avgBuyPrice),
-    totalInvested: toNum(h.totalInvested),
-    currentPrice:  h.currentPrice ? toNum(h.currentPrice) : null,
-    currentValue:  h.currentValue ? toNum(h.currentValue) : null,
-    pnlAbsolute:   derivePnl(h.pnlAbsolute, h.currentValue, h.totalInvested),
-    pnlPercent:    derivePnlPct(h.pnlPercent, h.currentValue, h.totalInvested),
-    xirr:          h.xirr ? toNum(h.xirr) : null,
+  const results = await Promise.all(
+    holdings.map(async (h) => {
+      const cv = toNum(h.currentValue);
+      const xirrVal = h.xirr ? toNum(h.xirr) : await computeXirr(h.id, cv);
+      return {
+        id:            h.id,
+        assetClass:    h.assetClass,
+        symbol:        h.symbol,
+        name:          h.name,
+        quantity:      toNum(h.quantity),
+        avgBuyPrice:   toNum(h.avgBuyPrice),
+        totalInvested: toNum(h.totalInvested),
+        currentPrice:  h.currentPrice ? toNum(h.currentPrice) : null,
+        currentValue:  cv || null,
+        pnlAbsolute:   derivePnl(h.pnlAbsolute, h.currentValue, h.totalInvested),
+        pnlPercent:    derivePnlPct(h.pnlPercent, h.currentValue, h.totalInvested),
+        xirr:          xirrVal,
     riskScore:     h.riskScore,
     brokerSource:  h.brokerSource,
     maturityDate:  h.maturityDate?.toISOString() ?? null,
@@ -226,11 +232,12 @@ export async function getHoldings(
     notes:         h.notes,
     firstBuyDate:  h.firstBuyDate?.toISOString() ?? null,
     createdAt:     h.createdAt.toISOString(),
-    transactionCount: h._count.transactions,
-    weight: totalCurrentValue > 0 && h.currentValue
-      ? (toNum(h.currentValue) / totalCurrentValue) * 100
-      : 0,
-  }));
+        transactionCount: h._count.transactions,
+        weight: totalCurrentValue > 0 ? (cv / totalCurrentValue) * 100 : 0,
+      };
+    })
+  );
+  return results;
 }
 
 export async function getHoldingById(userId: string, holdingId: string) {
@@ -253,10 +260,11 @@ export async function getHoldingById(userId: string, holdingId: string) {
 
   if (!holding) throw appError('Holding not found', 404);
 
-  const portfolio = await prisma.portfolio.findFirst({
-    where: { userId, familyMemberId: null },
+  const portfolioTotal = await prisma.holding.aggregate({
+    where: { portfolioId: holding.portfolioId, isActive: true },
+    _sum:  { currentValue: true },
   });
-  const totalCurrentValue = toNum(portfolio?.currentValue);
+  const totalCurrentValue = toNum(portfolioTotal._sum.currentValue);
 
   return {
     id:            holding.id,
@@ -278,7 +286,7 @@ export async function getHoldingById(userId: string, holdingId: string) {
     notes:         holding.notes,
     firstBuyDate:  holding.firstBuyDate?.toISOString() ?? null,
     createdAt:     holding.createdAt.toISOString(),
-    weight: totalCurrentValue > 0 && holding.currentValue
+    weight: totalCurrentValue > 0
       ? (toNum(holding.currentValue) / totalCurrentValue) * 100
       : 0,
     transactions: holding.transactions.map((t) => ({
