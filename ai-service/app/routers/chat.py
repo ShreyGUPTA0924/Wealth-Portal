@@ -5,11 +5,11 @@ from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 import google.generativeai as genai
+from app.gemini_client import RobustGeminiClient
 
 router = APIRouter()
 
-genai.configure(api_key=os.environ.get("GEMINI_API_KEY", ""))
-model = genai.GenerativeModel("gemini-2.5-flash")
+model = RobustGeminiClient("gemini-2.5-flash")
 
 SYSTEM_PROMPT = """You are WealthPortal AI, a personal financial advisor for Indian investors.
 You have access to the user complete financial data.

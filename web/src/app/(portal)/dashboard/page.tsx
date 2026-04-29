@@ -8,7 +8,7 @@ import {
 } from 'recharts';
 import {
   TrendingUp, TrendingDown, Lightbulb, CheckCircle2, Circle,
-  AlertCircle, Target, Clock, ArrowRight, Plus, Sparkles, ShieldAlert
+  AlertCircle, Target, Clock, ArrowRight, Plus, Sparkles, ShieldAlert, Zap, AlertTriangle, Info, Bell
 } from 'lucide-react';
 import Link from 'next/link';
 import apiClient from '@/lib/api-client';
@@ -494,6 +494,50 @@ function AiInsightsSection({ insights }: { insights: string[] }) {
   );
 }
 
+// ─── Smart Alerts (Nudges) ───────────────────────────────────────────────────
+
+function SmartAlertsSection() {
+  const { data } = useQuery({
+    queryKey: ['dashboard-nudges'],
+    queryFn: () =>
+      apiClient.get('/api/ai/nudges?limit=2').then((r) => r.data.data),
+    staleTime: 60_000,
+  });
+
+  const nudges = data?.nudges?.filter((n: any) => !n.isRead) || [];
+  if (nudges.length === 0) return null;
+
+  return (
+    <Card className="mb-8 p-[1px] relative overflow-hidden group rounded-[2rem] bg-gradient-to-r from-red-500/30 via-amber-500/30 to-brand/30">
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-[2000ms]" />
+      <div className="p-4 bg-[#0f172a]/90 backdrop-blur-3xl rounded-[calc(2rem-1px)] relative z-10 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center">
+             <Bell className="w-5 h-5 text-red-400" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-white flex items-center gap-2">Smart Alerts</h3>
+            <p className="text-xs text-gray-400">You have {data.unread_count} unread insight{data.unread_count > 1 ? 's' : ''}</p>
+          </div>
+        </div>
+        <div className="flex-1 flex flex-col md:flex-row gap-3">
+          {nudges.map((nudge: any) => (
+             <Link key={nudge.id} href="/advisor/nudges" className="flex-1 flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 transition-colors">
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-white truncate">{nudge.title}</p>
+                  <p className="text-xs text-gray-400 truncate mt-0.5">{nudge.message}</p>
+                </div>
+             </Link>
+          ))}
+        </div>
+        <Link href="/advisor/nudges" className="shrink-0 px-4 py-2 text-xs font-bold text-brand hover:text-brand-dark flex items-center gap-1">
+           View all <ArrowRight className="w-3 h-3" />
+        </Link>
+      </div>
+    </Card>
+  );
+}
+
 // ─── Checklist (Bill Reminders) ───────────────────────────────────────────────
 
 function ChecklistSection({ checklist, upcomingBills }: { checklist: DashboardData['checklist']; upcomingBills: DashboardData['upcomingBills'] }) {
@@ -799,6 +843,12 @@ export default function DashboardPage() {
       </div>
       
       <MotionWrapper stagger className="flex flex-col gap-8 max-w-[1400px] mx-auto pb-12 relative z-10">
+      
+      {/* Smart Alerts Banner */}
+      <MotionItem>
+        <SmartAlertsSection />
+      </MotionItem>
+
       {/* Top Section: Net Worth card (stats above chart) */}
       <BentoGrid>
         <BentoItem className="md:col-span-3 xl:col-span-4">

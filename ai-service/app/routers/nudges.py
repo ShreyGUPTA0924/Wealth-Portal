@@ -28,17 +28,8 @@ class NudgeResult(BaseModel):
 
 
 def _generate_nudge_message(issue_type: str, context: dict) -> str:
-    prompt = f"""You are a friendly Indian financial advisor. Write a brief, actionable nudge message (2-3 sentences max) for this issue:
-
-Issue: {issue_type}
-Context: {json.dumps(context)}
-
-Be specific, use INR amounts where relevant, and suggest a clear next action. Use a warm, encouraging tone."""
-    try:
-        response = model.generate_content(prompt)
-        return response.text.strip()
-    except Exception:
-        return context.get("default_message", "Please review this financial concern.")
+    # OPTIMIZATION A: Bypass AI to save tokens, return template directly.
+    return context.get("default_message", "Please review this financial concern.")
 
 
 @router.post("/nudges/analyse")

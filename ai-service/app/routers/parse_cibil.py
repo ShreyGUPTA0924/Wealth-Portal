@@ -4,6 +4,7 @@ import re
 from typing import Optional
 from fastapi import APIRouter, File, UploadFile
 import google.generativeai as genai
+from app.gemini_client import RobustGeminiClient
 
 router = APIRouter()
 
@@ -12,8 +13,7 @@ try:
 except ImportError:
     pdfplumber = None  # type: ignore
 
-genai.configure(api_key=os.environ.get("GEMINI_API_KEY", ""))
-model = genai.GenerativeModel("gemini-2.5-flash")
+model = RobustGeminiClient("gemini-2.5-flash")
 
 CIBIL_PROMPT = """You are parsing an Indian CIBIL credit report. Extract all active loans and credit card accounts.
 For each one return:

@@ -105,28 +105,14 @@ def _parse_date(date_str: str) -> datetime:
 
 
 def _generate_summary(scores: dict) -> str:
-    prompt = f"""You are a financial advisor. Write exactly 2 sentences summarising this financial health score for an Indian investor.
-Be specific, mention the strongest and weakest areas. Use â‚¹ / Indian context.
-
-Scores:
-- Overall: {scores['overall']:.0f}/100
-- Diversification: {scores['diversification']:.0f}/100
-- Goal Progress: {scores['goals']:.0f}/100
-- Portfolio Quality: {scores['quality']:.0f}/100
-- Financial Discipline: {scores['discipline']:.0f}/100
-
-Write 2 sentences only, no bullet points."""
-    try:
-        response = model.generate_content(prompt)
-        return response.text.strip()
-    except Exception:
-        overall = scores["overall"]
-        if overall >= 70:
-            return "Your financial health looks strong with good diversification and consistent discipline. Keep up the momentum and review your goal progress quarterly."
-        elif overall >= 40:
-            return "Your portfolio shows moderate financial health with room for improvement. Focus on diversification and staying consistent with your financial checklist."
-        else:
-            return "Your financial health needs attention across multiple areas. Start by diversifying your portfolio and setting up automatic SIPs for your goals."
+    # OPTIMIZATION B: Bypass AI to save tokens, use static logic directly.
+    overall = scores.get("overall", 0)
+    if overall >= 70:
+        return "Your financial health looks strong with good diversification and consistent discipline. Keep up the momentum and review your goal progress quarterly."
+    elif overall >= 40:
+        return "Your portfolio shows moderate financial health with room for improvement. Focus on diversification and staying consistent with your financial checklist."
+    else:
+        return "Your financial health needs attention across multiple areas. Start by diversifying your portfolio and setting up automatic SIPs for your goals."
 
 
 @router.post("/health-score")
