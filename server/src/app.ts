@@ -38,8 +38,8 @@ app.use(
       if (!origin) return callback(null, true);
       // Always allow in development
       if (NODE_ENV === 'development') return callback(null, true);
-      // Allow any *.vercel.app subdomain (covers all preview + production deployments)
-      if (origin.endsWith('.vercel.app')) return callback(null, true);
+      // Allow any *.vercel.app or *.onrender.com subdomain
+      if (origin.endsWith('.vercel.app') || origin.endsWith('.onrender.com')) return callback(null, true);
       // Allow explicitly listed origins from env
       if (allowedOrigins.includes(origin)) return callback(null, true);
       // Block everything else
