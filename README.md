@@ -182,7 +182,7 @@ If the project is deployed on **[Render](https://render.com/)**, open your **liv
 **Why incognito?** It **isolates cookies** from your **localhost** dev session, reduces weird **JWT refresh** behaviour when switching environments, and gives reviewers a **clean first visit** for demos.
 
 <p align="center">
-  <a href="https://your-app.onrender.com">
+  <a href="https://wealth-portal-web.onrender.com/dashboard">
     <img src="https://img.shields.io/badge/Open%20live%20app-%20update%20this%20link%20%E2%86%92-46A049?style=for-the-badge&logo=render&logoColor=white" alt="Open Render deployment"/>
   </a>
 </p>
