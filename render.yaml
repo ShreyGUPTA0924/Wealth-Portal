@@ -32,6 +32,10 @@ services:
         fromDatabase:
           name: wealth-portal-db
           property: connectionString
+      - key: DIRECT_URL
+        fromDatabase:
+          name: wealth-portal-db
+          property: connectionString
       - key: REDIS_URL
         fromService:
           type: redis
