@@ -185,7 +185,7 @@ export default function LoginPage() {
           <p className="text-sm text-foreground-muted mt-1">
             {needsTwoFa
               ? 'Enter the 6-digit code from your authenticator app'
-              : 'Sign in to your WealthPortal account'}
+              : 'Sign in to your WealthWise account'}
           </p>
         </div>
 

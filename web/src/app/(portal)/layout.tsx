@@ -64,7 +64,7 @@ function MobileNavOverlay({ onClose }: { onClose: () => void }) {
           <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-white font-bold text-base ring-2 ring-white/30">
             W
           </div>
-          <span className="text-lg font-bold text-white">WealthPortal</span>
+          <span className="text-lg font-bold text-white">WealthWise</span>
         </Link>
         <Link href="/reports" onClick={onClose} className="flex items-center gap-1.5 text-white/90 hover:text-white text-sm font-semibold">
           Reports <ChevronRight className="w-4 h-4 -rotate-90" />
@@ -132,7 +132,7 @@ function Sidebar({ onClose }: { onClose?: () => void }) {
             W
           </div>
           <span className="text-lg font-bold tracking-tight text-gray-900 dark:text-white">
-            Wealth<span className="nav-logo-accent">Portal</span>
+            Wealth<span className="nav-logo-accent">Wise</span>
           </span>
         </Link>
         {onClose && (
@@ -229,7 +229,7 @@ function TopBar({ onMenuClick }: { onMenuClick: () => void }) {
     for (const item of NAV_ITEMS) {
       if (pathname === item.href || pathname.startsWith(item.href + '/')) return item.label;
     }
-    return 'WealthPortal';
+    return 'WealthWise';
   })();
 
   return (

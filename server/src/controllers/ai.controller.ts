@@ -414,21 +414,36 @@ export const analyse = wrap(async (req, res) => {
       URGENT:  'URGENT',
     };
 
-    const savedNudges = await Promise.all(
-      rawNudges.map((n) =>
-        prisma.aiNudge.create({
+    const savedNudges = [];
+    for (const n of rawNudges) {
+      const type = nudgeTypeMap[n.nudgeType] ?? 'HEALTH_REPORT';
+      const severity = severityMap[n.severity] ?? 'INFO';
+      
+      const existing = await prisma.aiNudge.findFirst({
+        where: {
+          userId,
+          nudgeType: type,
+          relatedHoldingId: n.relatedHoldingId ?? null,
+          relatedGoalId: n.relatedGoalId ?? null,
+          isDismissed: false,
+        }
+      });
+
+      if (!existing) {
+        const created = await prisma.aiNudge.create({
           data: {
             userId,
-            nudgeType:        nudgeTypeMap[n.nudgeType] ?? 'HEALTH_REPORT',
-            title:            n.title,
-            message:          n.message,
-            severity:         severityMap[n.severity] ?? 'INFO',
+            nudgeType: type,
+            title: n.title,
+            message: n.message,
+            severity,
             relatedHoldingId: n.relatedHoldingId ?? null,
-            relatedGoalId:    n.relatedGoalId    ?? null,
+            relatedGoalId: n.relatedGoalId ?? null,
           },
-        })
-      )
-    );
+        });
+        savedNudges.push(created);
+      }
+    }
 
     ok(res, {
       new_nudges:   savedNudges,

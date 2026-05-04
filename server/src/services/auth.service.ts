@@ -245,8 +245,8 @@ export async function setup2FA(
 
   const secret = speakeasy.generateSecret({
     length: 20,
-    name: `WealthPortal (${user.email})`,
-    issuer: 'WealthPortal',
+    name: `WealthWise (${user.email})`,
+    issuer: 'WealthWise',
   });
 
   // Save the raw secret; twoFaEnabled remains false until the first code is verified

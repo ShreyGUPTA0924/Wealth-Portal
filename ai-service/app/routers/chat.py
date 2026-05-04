@@ -11,7 +11,7 @@ router = APIRouter()
 
 model = RobustGeminiClient("gemini-2.5-flash")
 
-SYSTEM_PROMPT = """You are WealthPortal AI, a personal financial advisor for Indian investors.
+SYSTEM_PROMPT = """You are WealthWise AI, a personal financial advisor for Indian investors.
 You have access to the user complete financial data.
 Always give advice specific to their portfolio. Use INR currency.
 Be concise, friendly, and actionable. Never give generic advice.

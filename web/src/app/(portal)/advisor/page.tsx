@@ -303,7 +303,13 @@ function InsightsSidebar({
           <div className="text-center py-6 text-foreground-muted">
             <Sparkles className="w-7 h-7 mx-auto mb-2 text-gray-200" />
             <p className="text-xs">No active nudges</p>
-            <p className="text-xs mt-0.5">Click refresh to analyse your portfolio</p>
+            <button 
+              onClick={onRefreshAnalysis}
+              disabled={isAnalysing}
+              className="text-xs mt-1.5 text-[#3C3489] hover:underline transition-colors disabled:opacity-50"
+            >
+              {isAnalysing ? 'Analysing...' : 'Click to analyse your portfolio'}
+            </button>
           </div>
         ) : (
           <div className="space-y-2">

@@ -6,7 +6,7 @@ import { ThemeProvider } from '@/providers/ThemeProvider';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 
 export const metadata: Metadata = {
-  title: 'WealthPortal — India-First Wealth Management',
+  title: 'WealthWise — India-First Wealth Management',
   description:
     'Track stocks, mutual funds, gold, crypto, PPF, EPF and all your investments in one place. AI-powered insights for Indian investors.',
 };

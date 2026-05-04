@@ -1,34 +1,84 @@
 services:
-  # Node.js Express Server
-  - type: web
-    name: wealth-portal-server
-    env: node
-    rootDir: server
-    buildCommand: npm install && npm run build
-    startCommand: npm start
-    envVars:
-      - key: PORT
-        value: 10000
-      - key: NODE_ENV
-        value: production
-      - key: DATABASE_URL
-        sync: false # Must be provided by user in Render Dashboard
-      - key: JWT_SECRET
-        sync: false # Must be provided by user in Render Dashboard
-      - key: REDIS_URL
-        sync: false # Must be provided by user in Render Dashboard
-      - key: AI_SERVICE_URL
-        value: https://wealth-portal-ai.onrender.com
-
-  # FastAPI Python Server
   - type: web
     name: wealth-portal-ai
     env: python
     rootDir: ai-service
     buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1
+    plan: free
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.0
+      - key: PORT
+        value: 8000
+      - key: GEMINI_API_KEY_1
+        sync: false
+      - key: GEMINI_API_KEY_2
+        sync: false
+      - key: GEMINI_API_KEY_3
+        sync: false
+
+  - type: web
+    name: wealth-portal-server
+    env: node
+    rootDir: server
+    buildCommand: npm install && npm run build && npx prisma generate
+    startCommand: npm start
+    plan: free
+    envVars:
+      - key: NODE_VERSION
+        value: 20.12.0
+      - key: DATABASE_URL
+        fromDatabase:
+          name: wealth-portal-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: wealth-portal-redis
+          property: connectionString
+      - key: AI_SERVICE_URL
+        fromService:
+          type: web
+          name: wealth-portal-ai
+          property: url
+      - key: PORT
+        value: 5000
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
       - key: GEMINI_API_KEY
-        sync: false # Must be provided by user in Render Dashboard
+        sync: false
+
+  - type: web
+    name: wealth-portal-web
+    env: node
+    rootDir: web
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    plan: free
+    envVars:
+      - key: NODE_VERSION
+        value: 20.12.0
+      - key: NEXT_PUBLIC_API_URL
+        fromService:
+          type: web
+          name: wealth-portal-server
+          property: url
+      - key: NODE_ENV
+        value: production
+
+  - type: redis
+    name: wealth-portal-redis
+    plan: free
+    maxmemoryPolicy: allkeys-lru
+
+databases:
+  - name: wealth-portal-db
+    plan: free
+    databaseName: wealthportal
+    user: wealth
+    postgresMajorVersion: "16"

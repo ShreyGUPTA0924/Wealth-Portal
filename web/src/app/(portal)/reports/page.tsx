@@ -144,7 +144,7 @@ function PageHeader({page,title,sub}:{page:number;title:string;sub?:string}){
   return(
     <div className="flex items-start justify-between mb-6">
       <div>
-        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-indigo-500 mb-1">WealthPortal · Personal Wealth Report</p>
+        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-indigo-500 mb-1">WealthWise · Personal Wealth Report</p>
         <h2 className="text-xl font-bold text-gray-900 dark:text-white">{title}</h2>
         {sub&&<p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{sub}</p>}
       </div>
@@ -179,7 +179,7 @@ function P01Cover({user,nw,date}:{user:string;nw:number;date:string}){
       <div className="relative z-10 flex flex-col items-center gap-6 max-w-lg">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-xl text-white" style={{background:'rgba(255,255,255,0.15)',border:'2px solid rgba(255,255,255,0.2)'}}>W</div>
-          <span className="text-2xl font-bold text-white/90">WealthPortal</span>
+          <span className="text-2xl font-bold text-white/90">WealthWise</span>
         </div>
         <div>
           <h1 className="text-4xl font-extrabold text-white tracking-tight mb-2">Personal Wealth Report</h1>

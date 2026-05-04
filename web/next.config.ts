@@ -1,6 +1,7 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+  output: 'standalone',
   turbopack: {
     // Prevent Next.js from inferring an incorrect workspace root when multiple lockfiles exist.
     root: __dirname,

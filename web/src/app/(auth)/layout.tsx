@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-export const metadata: Metadata = { title: 'WealthPortal — Sign In' };
+export const metadata: Metadata = { title: 'WealthWise — Sign In' };
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -16,7 +16,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             W
           </div>
           <span className="text-xl font-semibold text-gray-900 tracking-tight">
-            Wealth<span className="text-[#3C3489]">Portal</span>
+            Wealth<span className="text-[#3C3489]">Wise</span>
           </span>
         </div>
       </header>
@@ -28,7 +28,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
       {/* ── Footer ── */}
       <footer className="text-center pb-6 text-xs text-gray-400">
-        © {new Date().getFullYear()} WealthPortal · India-First Wealth Management ·{' '}
+        © {new Date().getFullYear()} WealthWise · India-First Wealth Management ·{' '}
         <a href="#" className="hover:text-[#3C3489] transition-colors">Privacy</a>
         {' · '}
         <a href="#" className="hover:text-[#3C3489] transition-colors">Terms</a>

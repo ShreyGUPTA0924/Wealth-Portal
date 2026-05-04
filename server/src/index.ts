@@ -22,7 +22,7 @@ const IS_VERCEL = process.env['VERCEL'] === '1';
 
 if (!IS_VERCEL) {
   app.listen(PORT, async () => {
-    console.log(`WealthPortal server running on port ${PORT} [${NODE_ENV}]`);
+    console.log(`WealthWise server running on port ${PORT} [${NODE_ENV}]`);
 
     // Connect Redis (non-blocking — server works without it)
     await connectRedis();

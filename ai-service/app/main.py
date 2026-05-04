@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routers import chat, nudges, health_score, parse_cibil
 
-app = FastAPI(title="WealthPortal AI Service", version="1.0.0")
+app = FastAPI(title="WealthWise AI Service", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -24,4 +24,4 @@ app.include_router(parse_cibil.router)  # /parse-cibil at root
 
 @app.get("/health")
 async def health_check():
-    return {"status": "ok", "service": "wealth-portal-ai", "version": "1.0.0"}
+    return {"status": "ok", "service": "wealth-wise-ai", "version": "1.0.0"}
