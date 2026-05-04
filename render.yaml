@@ -22,7 +22,7 @@ services:
     name: wealth-portal-server
     env: node
     rootDir: server
-    buildCommand: npm install && npm run build && npx prisma generate
+    buildCommand: npm install --include=dev && npm run build && npx prisma generate
     startCommand: npm start
     plan: free
     envVars:
@@ -54,7 +54,7 @@ services:
     name: wealth-portal-web
     env: node
     rootDir: web
-    buildCommand: npm install && npm run build
+    buildCommand: npm install --include=dev && npm run build
     startCommand: npm start
     plan: free
     envVars:
