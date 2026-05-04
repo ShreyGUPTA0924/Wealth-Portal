@@ -1,18 +1,34 @@
 <div align="center">
 
-# WealthWise · WealthPortal
+<!-- Banner-style badge row — tweak hex colors to match your brand -->
+<img src="https://readme-typing-svg.demolab.com?font=Inter&weight=600&size=28&duration=3000&pause=800&color=6366F1&center=true&vCenter=true&width=800&height=50&lines=WealthWise+%C2%B7+WealthPortal;India-first+wealth+management+%2B+AI" alt="WealthWise title animation" />
 
-**India-first personal wealth management — portfolio tracking, goal-based planning, and an AI advisor that speaks your context.**
+<br/>
 
-[![Stack](https://img.shields.io/badge/Stack-Full--Stack-5b4bcd?style=for-the-badge)](README.md)
-[![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat&logo=next.js&logoColor=white)](https://nextjs.org/)
-[![Express](https://img.shields.io/badge/Express-5-404040?style=flat&logo=express&logoColor=white)](https://expressjs.com/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-AI-009688?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Prisma-4169E1?style=flat&logo=postgresql&logoColor=white)](https://www.prisma.io/)
+[![India-first](https://img.shields.io/badge/India--first-investors-FF6B35?style=for-the-badge)](README.md)
+[![Full-stack](https://img.shields.io/badge/Build-Full--stack-6366F1?style=for-the-badge)](README.md)
+[![AI](https://img.shields.io/badge/AI-Gemini-8B5CF6?style=for-the-badge&logo=google-gemini&logoColor=white)](https://ai.google.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![License vibe](https://img.shields.io/badge/Project-Academic%20%2F%20Minor-14b8a6?style=for-the-badge)](README.md)
 
-*Minor project · full-stack web application*
+<p align="center">
+  <strong>Portfolio tracking · Goal-based planning · AI advisor that knows <em>your</em> context</strong>
+</p>
 
-[What it does](#what-it-does) · [USP](#why-this-project-stands-out-usp) · [Features](#features-at-a-glance) · [Architecture](#architecture) · [Repository layout](#repository-layout) · [Run locally](#running-locally)
+<p align="center">
+  <a href="#what-it-does"><img src="https://img.shields.io/badge/Overview-4f46e5?style=flat-square&labelColor=312e81&color=a5b4fc" alt="Jump to overview"/></a>
+  <a href="#why-this-project-stands-out-usp"><img src="https://img.shields.io/badge/USP-7c3aed?style=flat-square&labelColor=4c1d95&color=c4b5fd" alt="Jump to USP"/></a>
+  <a href="#features-at-a-glance"><img src="https://img.shields.io/badge/Features-0d9488?style=flat-square&labelColor=134e4a&color=99f6e4" alt="Jump to features"/></a>
+  <a href="#architecture"><img src="https://img.shields.io/badge/Architecture-e11d48?style=flat-square&labelColor=881337&color=fda4af" alt="Jump to architecture"/></a>
+  <a href="#repository-layout"><img src="https://img.shields.io/badge/Layout-ca8a04?style=flat-square&labelColor=713f12&color=fef08a" alt="Jump to layout"/></a>
+  <a href="#run-the-project"><img src="https://img.shields.io/badge/Run%20%26%20Demo-ea580c?style=flat-square&labelColor=9a3412&color=fdba74" alt="Jump to run and demo"/></a>
+</p>
+
+<br/>
+
+| Web | API | AI | Data |
+|:---:|:---:|:---:|:---:|
+| [![Next](https://img.shields.io/badge/Next.js-16-000000?style=flat&logo=next.js&logoColor=white)](https://nextjs.org/) | [![Express](https://img.shields.io/badge/Express-5-404040?style=flat&logo=express&logoColor=white)](https://expressjs.com/) | [![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/) | [![Postgres](https://img.shields.io/badge/PostgreSQL-Prisma-4169E1?style=flat&logo=postgresql&logoColor=white)](https://www.prisma.io/) |
 
 </div>
 
@@ -20,21 +36,21 @@
 
 ## What it does
 
-**WealthWise** (frontend product name) / **WealthPortal** (repository) is a **full-stack wealth-management platform** tailored for Indian investors. Users sign in securely, track holdings across **equities, mutual funds, fixed income, gold, and more**, set **financial goals** with health tracking, manage **family-linked portfolios**, and interact with an **AI advisor** powered by **Google Gemini** — including conversational guidance, automated **nudges** (rebalancing, concentration risk, SIP insights), a **portfolio health** lens, and **CIBIL report parsing** through the Python AI service.
+**WealthWise** (product UI) / **WealthPortal** (this repo) is a **full-stack wealth-management platform** for Indian investors: secure sign-in, holdings across **equities, mutual funds, fixed income, gold**, **financial goals** with health tracking, **family-linked portfolios**, and an **AI advisor** powered by **Google Gemini** — chat, **smart nudges** (rebalancing, concentration, SIPs), **portfolio health**, and **CIBIL report parsing** via the Python AI service.
 
-The experience is delivered as a **modern, glass-style dashboard** (sidebar navigation, dark/light themes, Framer Motion polish) backed by a **REST API** with JWT sessions, validation, and optional **Redis** + **background jobs** for market sync.
+The client is a **glass-style dashboard** (sidebar, dark/light mode, Framer Motion) on a **REST API** with JWT sessions, Zod validation, and optional **Redis** plus **cron jobs** for market sync.
 
 ---
 
 ## Why this project stands out (USP)
 
-| USP | In one line |
-|-----|-------------|
-| **India-focused instruments** | First-class support for MF, FD/RD, PPF, EPF, NPS, SGB, gold, and Indian broker flows — not just “generic stocks.” |
-| **AI with real portfolio context** | Chat and nudges are fed **your** holdings, goals, risk profile, and recent bill-pay checklist — not generic finance trivia. |
-| **Goal + holding linkage** | Goals track **health status**, suggested SIPs, and optional **allocations** tied to specific holdings. |
-| **Household view** | **Family members** can each have a **portfolio** — useful for spouses, kids’ education funds, etc. |
-| **Ops-ready backend** | Rate limits, Helmet, Zod validation, Prisma ORM, cron **price sync** (Yahoo Finance), optional Redis, report/notification models. |
+| | USP | In one line |
+|---|-----|-------------|
+| 🇮🇳 | **India-focused instruments** | MF, FD/RD, PPF, EPF, NPS, SGB, gold, Zerodha/Upstox — not “stocks only.” |
+| 🧠 | **AI with real portfolio context** | Advice uses **your** holdings, goals, risk, and bill checklist — not generic tips. |
+| 🎯 | **Goals ↔ holdings** | Health status, SIP hints, optional **allocations** tied to holdings. |
+| 👪 | **Household view** | Family members with **their own portfolios** (spouse, kids’ education, etc.). |
+| 🛡️ | **Production-minded API** | Rate limits, Helmet, Prisma, Yahoo **price sync**, Redis-ready, reports & notifications. |
 
 ---
 
@@ -42,44 +58,48 @@ The experience is delivered as a **modern, glass-style dashboard** (sidebar navi
 
 ### Core product
 
-- **Authentication** — Email/password, **Google OAuth**, JWT access + refresh (**httpOnly cookies**), silent refresh on `401`, optional **2FA (TOTP)**.
-- **Dashboard** — Aggregated view of wealth and activity (driven by dedicated dashboard services).
-- **Portfolio & holdings** — Add/edit holdings across **asset classes**; broker sources include **manual**, **Zerodha**, **Upstox**, **CSV import**; P&amp;L, **XIRR**, and live/derived pricing via market integration and **scheduled sync jobs**.
-- **Goals** — Categories (retirement, house, education, travel, emergency, wedding, custom); **target date & amount**, progress, **health** (on track / at risk / off track), SIP hints, link holdings to goals.
-- **Family** — Manage **family members** (relationship, minors, allowance) and **per-member portfolios**.
-- **Reminders & bills** — **Checklist templates** (rent, utilities, EMIs, subscriptions, insurance, etc.) with **monthly entries** and paid/unpaid tracking — also surfaces in **AI context** for smarter advice.
-- **Learn** — Curated learning flows by category (API-backed).
-- **Reports** — Generate **portfolio**, **capital gains**, **full financial**, or **family** reports (queued → ready pipeline in the data model).
-- **Settings & onboarding** — Risk profile, preferences, guided onboarding flow.
+| Area | Highlights |
+|------|------------|
+| 🔐 **Auth** | Email/password, **Google OAuth**, JWT + refresh (**httpOnly cookies**), silent refresh on `401`, optional **2FA (TOTP)**. |
+| 📊 **Dashboard** | Aggregated wealth & activity via dashboard services. |
+| 💼 **Portfolio** | Many **asset classes**; brokers: manual, **Zerodha**, **Upstox**, **CSV**; P&amp;L, **XIRR**, scheduled price sync. |
+| 🎯 **Goals** | Retirement, house, education, travel, emergency, wedding, custom; **health** (on track / at risk / off track), SIP hints, link to holdings. |
+| 👨‍👩‍👧 **Family** | Members, relationships, minors, allowance, **per-member portfolios**. |
+| 🔔 **Reminders** | **Checklist** templates (rent, utilities, EMIs, insurance…); monthly paid/unpaid — **fed to AI** for context. |
+| 📚 **Learn** | Category-based learning (API-driven). |
+| 📄 **Reports** | Portfolio, capital gains, full financial, family — **queued → ready** pipeline. |
+| ⚙️ **Settings** | Risk profile, onboarding, preferences. |
 
 ### AI layer
 
-- **Chat sessions** — Persistent **chat history** per user; messages stored in PostgreSQL.
-- **Nudges** — Types such as **rebalance**, **expense ratio**, **concentration**, **SIP underperform**, **panic sell**, **health report**; severity levels.
-- **Micro-routes (FastAPI)** — e.g. **health score**, **CIBIL PDF parsing** (pdfplumber + Gemini stack in `ai-service`).
+| | |
+|---|---|
+| 💬 **Chat** | Persistent sessions & messages in PostgreSQL. |
+| ✨ **Nudges** | Rebalance, expense ratio, concentration, SIP underperform, panic sell, health report + severities. |
+| 🔬 **FastAPI** | Health score, **CIBIL PDF parsing** (pdfplumber + Gemini), chat, nudges. |
 
 ---
 
 ## Architecture
 
-High-level flow: the **Next.js** app talks to the **Express API** (same-origin cookies). The API owns **auth, CRUD, calculations, and jobs**; it calls the **FastAPI + Gemini** service for language and document tasks. **PostgreSQL** holds authoritative data; **Redis** is available for caching/queues where configured.
+**Next.js** → **Express** (REST + cookies) → **Prisma / PostgreSQL**; **FastAPI + Gemini** for LLM and docs; **Redis** optional; **cron** for prices and goal sync.
 
 ```mermaid
 flowchart LR
-  subgraph client [Web — Next.js]
-    UI[App Router + React Query + Zustand]
+  subgraph client["🖥️ Web — Next.js"]
+    UI["App Router · React Query · Zustand"]
   end
 
-  subgraph api [API — Node.js]
-    EX[Express 5]
-    PR[Prisma → PostgreSQL]
-    JOB[Cron: price sync, goals sync]
-    RD[(Redis optional)]
+  subgraph api["⚙️ API — Node.js"]
+    EX["Express 5"]
+    PR["Prisma → PostgreSQL"]
+    JOB["Cron · prices · goals"]
+    RD[("Redis · optional")]
   end
 
-  subgraph ai [AI — Python]
-    FA[FastAPI]
-    GM[Gemini]
+  subgraph ai["🤖 AI — Python"]
+    FA["FastAPI"]
+    GM["Gemini"]
   end
 
   UI -->|REST + cookies| EX
@@ -109,7 +129,7 @@ Wealth-Portal/
 │   └── public/
 ├── server/                 # Express 5 · Prisma · TypeScript
 │   ├── prisma/
-│   │   └── schema.prisma   # Users, portfolios, holdings, goals, family,
+│   │   └── schema.prisma   # users, portfolios, holdings, goals, family,
 │   │                        # transactions, checklist, AI nudges, chat, reports,
 │   │                        # notifications, …
 │   └── src/
@@ -120,60 +140,90 @@ Wealth-Portal/
 │       ├── middleware/       # auth, validate (Zod), rate limit
 │       ├── jobs/             # e.g. priceSync
 │       └── lib/              # prisma, redis, calculations
-├── ai-service/             # FastAPI · Gemini · CIBIL parsing, chat, nudges, health
+├── ai-service/             # FastAPI · Gemini · CIBIL, chat, nudges, health
 │   └── app/
 │       ├── routers/        # chat, nudges, health_score, parse_cibil
 │       └── gemini_client.py
-└── shared/                 # Shared TS types (package stub / future extraction)
+└── shared/                 # shared TS types (stub / future extraction)
 ```
 
-### Frontend route map (mental model)
+### Frontend route map
 
 | Area | Routes (examples) |
-|------|---------------------|
+|------|-------------------|
 | **Auth** | `/login`, `/register`, `/verify`, `/onboarding` |
-| **App shell** | `(portal)` layout: sidebar **Dashboard, Portfolio, Goals, AI Advisor, Family, Learn, Reminders, Reports** + **Settings** |
-| **Deep links** | `/portfolio/add`, `/portfolio/[holdingId]`, `/goals/new`, `/goals/[goalId]`, `/family/[memberId]`, `/learn/[category]`, `/advisor/nudges` |
+| **Portal shell** | Sidebar: **Dashboard, Portfolio, Goals, AI Advisor, Family, Learn, Reminders, Reports** + **Settings** |
+| **Deeper** | `/portfolio/add`, `/portfolio/[holdingId]`, `/goals/new`, `/goals/[goalId]`, `/family/[memberId]`, `/learn/[category]`, `/advisor/nudges` |
 
 ---
 
 ## Tech stack
 
-| Layer | Technologies |
-|-------|----------------|
-| **Frontend** | Next.js 16, React 19, TypeScript, Tailwind CSS 4, Framer Motion, Recharts, Lucide, React Hook Form + Zod, TanStack Query, Zustand, next-themes |
-| **Backend** | Node.js, Express 5, Prisma 5, PostgreSQL, Zod, JWT (access/refresh), bcrypt, Bull-ready stack (Bull in deps), ioredis, Yahoo Finance (`yahoo-finance2`), node-cron, multer, Nodemailer, Speakeasy (2FA), Helmet, rate limiting |
-| **AI** | Python, FastAPI, `google-generativeai`, pdfplumber, httpx |
-| **Infra concepts** | Supabase-compatible Postgres URLs, optional Redis, deploy-friendly CORS (e.g. Vercel / Render) |
+| | Layer | Technologies |
+|---|------|--------------|
+| 🟣 | **Frontend** | Next.js 16, React 19, TypeScript, Tailwind CSS 4, Framer Motion, Recharts, Lucide, React Hook Form + Zod, TanStack Query, Zustand, next-themes |
+| 🌿 | **Backend** | Node.js, Express 5, Prisma 5, PostgreSQL, Zod, JWT, bcrypt, Bull (deps), ioredis, yahoo-finance2, node-cron, multer, Nodemailer, Speakeasy, Helmet, rate limiting |
+| 🔮 | **AI** | Python, FastAPI, google-generativeai, pdfplumber, httpx |
+| ☁️ | **Infra** | Supabase-style Postgres URLs, optional Redis, CORS friendly for Vercel + Render (`*.onrender.com`) |
 
 ---
 
-## Running locally
+## Run the project
 
-Prerequisites: **Node.js**, **Python 3**, **PostgreSQL** (e.g. Supabase), and optionally **Redis**.
+### Live app on Render (use incognito)
 
-1. **Database** — Create a database and set `DATABASE_URL` / `DIRECT_URL` in `server` (see Prisma).
-2. **Server** — In `server/`: `npm install`, `npx prisma migrate dev` (or `db push`), set `JWT_SECRET`, `JWT_REFRESH_SECRET`, then `npm run dev` (default port **5000**).
-3. **Web** — In `web/`: `npm install`, set `NEXT_PUBLIC_API_URL` to your API base (e.g. `http://localhost:5000`), then `npm run dev` (default **3000**).
-4. **AI service** — In `ai-service/`: create a virtualenv, `pip install -r requirements.txt`, configure Gemini/API keys in `.env`, run Uvicorn per your setup; point the server’s **`AI_SERVICE_URL`** to it (default **`http://localhost:8000`**).
+If the project is deployed on **[Render](https://render.com/)**, open your **live URL** from the Render dashboard (for example `https://<your-service>.onrender.com`) in a **new incognito / private window**:
 
-Health checks: **`GET /health`** on the API and **`GET /health`** on the AI service confirm services are up.
+| Browser | Shortcut (Windows) |
+|---------|-------------------|
+| **Chrome / Edge** | `Ctrl` + `Shift` + `N` |
+| **Firefox** | `Ctrl` + `Shift` + `P` |
 
-> Environment variables are intentionally **not** committed — copy patterns from each subfolder’s needs (`JWT_*`, `DATABASE_URL`, `REDIS_URL`, `AI_SERVICE_URL`, `ALLOWED_ORIGINS`, Google OAuth secrets, etc.).
+**Why incognito?** It **isolates cookies** from your **localhost** dev session, reduces weird **JWT refresh** behaviour when switching environments, and gives reviewers a **clean first visit** for demos.
+
+<p align="center">
+  <a href="https://your-app.onrender.com">
+    <img src="https://img.shields.io/badge/Open%20live%20app-%20update%20this%20link%20%E2%86%92-46A049?style=for-the-badge&logo=render&logoColor=white" alt="Open Render deployment"/>
+  </a>
+</p>
+
+Edit the badge URL above in the README to match your real Render service URL.
 
 ---
 
-## Project status & notes
+### Run from source locally
 
-- The **root `web/src/app/page.tsx`** route may still show the default Next.js starter; the **product UI** lives under **`(auth)`** and **`(portal)`** — start from **`/login`** after the API is running.
-- **Price sync** can be toggled with **`DISABLE_PRICE_SYNC=true`** when developing offline.
+**Prerequisites:** Node.js, Python 3, PostgreSQL (e.g. Supabase), optional Redis.
+
+1. **Database** — Create a DB; set `DATABASE_URL` and `DIRECT_URL` under `server/` (see Prisma).
+2. **API** — `cd server` → `npm install` → `npx prisma migrate dev` (or `db push`) → set `JWT_SECRET`, `JWT_REFRESH_SECRET` → `npm run dev` (default **`5000`**).
+3. **Web** — `cd web` → `npm install` → set `NEXT_PUBLIC_API_URL` (e.g. `http://localhost:5000`) → `npm run dev` (default **`3000`**).
+4. **AI service** — `cd ai-service` → venv → `pip install -r requirements.txt` → configure `.env` (Gemini keys) → run Uvicorn; set server **`AI_SERVICE_URL`** (default **`http://localhost:8000`**).
+
+**Health checks:** `GET /health` on the API and on the AI service.
+
+> Env files are not committed — wire `JWT_*`, `DATABASE_URL`, `REDIS_URL`, `AI_SERVICE_URL`, `ALLOWED_ORIGINS`, Google OAuth secrets, etc. per environment.
+
+---
+
+## Project notes
+
+- Root `web/src/app/page.tsx` may still be the **Next.js starter**; the real product is under **`(auth)`** and **`(portal)`** — use **`/login`** once the API is up.
+- Set **`DISABLE_PRICE_SYNC=true`** when you want to skip market sync offline.
 
 ---
 
 <div align="center">
 
-**WealthWise** — *plan smarter, invest clearer, learn as you grow.*
+### WealthWise
 
-Made with care for a college minor / capstone-style full-stack submission.
+*Plan smarter · Invest clearer · Learn as you grow*
+
+<sub>Minor / capstone-style full-stack project · README tuned for clarity & color</sub>
+
+<br/>
+
+[![Stars](https://img.shields.io/github/stars/ShreyGUPTA0924/Wealth-Portal?style=social)](https://github.com/ShreyGUPTA0924/Wealth-Portal)
+[![Forks](https://img.shields.io/github/forks/ShreyGUPTA0924/Wealth-Portal?style=social)](https://github.com/ShreyGUPTA0924/Wealth-Portal)
 
 </div>
