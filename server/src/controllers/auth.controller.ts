@@ -8,7 +8,7 @@ const IS_PROD = process.env['NODE_ENV'] === 'production';
 const ACCESS_COOKIE_OPTIONS: CookieOptions = {
   httpOnly: true,
   secure: IS_PROD,
-  sameSite: 'lax',
+  sameSite: IS_PROD ? 'none' : 'lax',
   maxAge: 7 * 24 * 60 * 60 * 1000,  // 7 days in ms
   path: '/',
 };
@@ -16,7 +16,7 @@ const ACCESS_COOKIE_OPTIONS: CookieOptions = {
 const REFRESH_COOKIE_OPTIONS: CookieOptions = {
   httpOnly: true,
   secure: IS_PROD,
-  sameSite: 'lax',
+  sameSite: IS_PROD ? 'none' : 'lax',
   maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days in ms
   path: '/',
 };
