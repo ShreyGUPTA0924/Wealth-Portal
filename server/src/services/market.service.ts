@@ -1,7 +1,6 @@
 import axios from 'axios';
-// yahoo-finance2 v3 requires instantiation — create a shared instance
-import YahooFinance from 'yahoo-finance2';
-const yahooFinance = new YahooFinance({ suppressNotices: ['yahooSurvey'] });
+import yahooFinance from 'yahoo-finance2';
+yahooFinance.suppressNotices(['yahooSurvey']);
 import { cacheGet, cacheSet, cacheKey, TTL } from '../lib/redis';
 
 // ─── Shared types ─────────────────────────────────────────────────────────────

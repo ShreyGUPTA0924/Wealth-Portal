@@ -1,9 +1,12 @@
 import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
 import './globals.css';
 import { QueryProvider } from '@/providers/QueryProvider';
 import { LayoutTransition } from '@/components/ui/LayoutTransition';
 import { ThemeProvider } from '@/providers/ThemeProvider';
 import { GoogleOAuthProvider } from '@react-oauth/google';
+
+const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
 
 export const metadata: Metadata = {
   title: 'WealthWise — India-First Wealth Management',
@@ -19,7 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="antialiased font-sans text-foreground bg-background transition-colors duration-300">
+      <body className={`${inter.variable} font-sans antialiased text-foreground bg-background transition-colors duration-300`}>
         <GoogleOAuthProvider clientId={clientId}>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <QueryProvider>
