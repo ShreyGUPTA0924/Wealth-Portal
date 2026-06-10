@@ -9,6 +9,8 @@ import { NudgeType, NudgeSeverity } from '@prisma/client';
 
 const AI_SERVICE_URL = process.env['AI_SERVICE_URL'] ?? 'http://localhost:8000';
 
+console.log(`[Init] AI_SERVICE_URL configured as: ${AI_SERVICE_URL}`);
+
 function ok(res: Response, data: unknown, status = 200): void {
   res.status(status).json({ success: true, data });
 }
@@ -66,13 +68,13 @@ async function buildUserContext(userId: string) {
         monthYear: e.monthYear,
         isPaid: e.isPaid,
       })),
-  };
+   };
   } catch {
     return { portfolio: null, goals: [], risk_profile: 'MODERATE', checklist_history: [] };
   }
 }
 
-// ─── Chat Sessions ─────────────────────────────────────────────────────────────
+// ─── Chat Sessions ────────────────────────────────────────────────────────────
 
 export const listChatSessions = wrap(async (req, res) => {
   const userId = req.user!.id;
@@ -178,6 +180,8 @@ export const chat = wrap(async (req, res) => {
   let assistantContent = '';
 
   try {
+    console.log(`[Chat] Calling AI service at: ${AI_SERVICE_URL}/ai/chat`);
+    
     const aiResponse = await axios.post(
       `${AI_SERVICE_URL}/ai/chat`,
       {
@@ -222,10 +226,12 @@ export const chat = wrap(async (req, res) => {
       (aiResponse.data as NodeJS.ReadableStream).on('error', reject);
     });
   } catch (err) {
+    const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+    console.error(`[Chat Error] AI service failed: ${errorMsg}`, { aiServiceUrl: AI_SERVICE_URL });
     res.write(`data: ${JSON.stringify({ error: 'AI service unavailable' })}\n\n`);
     res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
     assistantContent =
-      'The AI advisor is temporarily unavailable. Please start the ai-service (see README) and try again.';
+      'The AI advisor is temporarily unavailable. Please try again in a moment. If the issue persists, contact support.';
   }
 
   // Save assistant response
@@ -250,7 +256,7 @@ export const chat = wrap(async (req, res) => {
   res.end();
 });
 
-// ─── Nudges ────────────────────────────────────────────────────────────────────
+// ─── Nudges ──────────────────────────────────────────────────────────────────
 
 export const listNudges = wrap(async (req, res) => {
   const userId = req.user!.id;
@@ -375,12 +381,14 @@ export const analyse = wrap(async (req, res) => {
   }));
 
   try {
+    console.log(`[Analyse] Calling AI service at: ${AI_SERVICE_URL}`);
+    
     const [nudgesResp, scoreResp] = await Promise.all([
       axios.post(`${AI_SERVICE_URL}/ai/nudges/analyse`, {
         portfolio: portfolioPayload,
         goals:     goalsPayload,
         risk_profile: user?.riskProfile ?? 'MODERATE',
-      }),
+      }, { timeout: 30_000 }),
       axios.post(`${AI_SERVICE_URL}/ai/health-score`, {
         portfolio:         portfolioPayload,
         goals:             goalsPayload,
@@ -388,7 +396,7 @@ export const analyse = wrap(async (req, res) => {
           monthYear: e.monthYear,
           isPaid:    e.isPaid,
         })),
-      }),
+      }, { timeout: 30_000 }),
     ]);
 
     const rawNudges = (nudgesResp.data as { nudges: Array<{
@@ -451,11 +459,12 @@ export const analyse = wrap(async (req, res) => {
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'AI service error';
+    console.error(`[Analyse Error] ${msg}`, { aiServiceUrl: AI_SERVICE_URL });
     res.status(502).json({ success: false, message: `AI service error: ${msg}` });
   }
 });
 
-// ─── Health Score ─────────────────────────────────────────────────────────────
+// ─── Health Score ────────────────────────────────────────────────────────────
 
 export const getHealthScore = wrap(async (req, res) => {
   const userId = req.user!.id;
@@ -512,6 +521,8 @@ export const getHealthScore = wrap(async (req, res) => {
   };
 
   try {
+    console.log(`[HealthScore] Calling AI service at: ${AI_SERVICE_URL}/ai/health-score`);
+    
     const scoreResp = await axios.post(`${AI_SERVICE_URL}/ai/health-score`, {
       portfolio:         portfolioPayload,
       goals:             goals.map((g) => ({
@@ -523,10 +534,11 @@ export const getHealthScore = wrap(async (req, res) => {
         monthYear: e.monthYear,
         isPaid:    e.isPaid,
       })),
-    });
+    }, { timeout: 30_000 });
 
     ok(res, scoreResp.data);
-  } catch {
-    ok(res, { overall: 0, breakdown: { diversification: 0, goals: 0, quality: 0, discipline: 0 }, summary: 'Unable to compute health score at this time.' });
+  } catch (err) {
+    console.error(`[HealthScore Error] ${err instanceof Error ? err.message : 'Unknown error'}`, { aiServiceUrl: AI_SERVICE_URL });
+    ok(res, { overall: 0, breakdown: { diversification: 0, goals: 0, quality: 0, discipline: 0 }, summary: 'Unable to compute health score at this time. Please ensure the AI service is running.' });
   }
 });
