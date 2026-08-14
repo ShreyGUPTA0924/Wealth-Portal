@@ -67,6 +67,11 @@ export const linkHolding = wrap(async (req, res) => {
     return;
   }
 
+  if (typeof allocationPercent !== 'number' || allocationPercent <= 0 || allocationPercent > 100) {
+    res.status(400).json({ success: false, message: 'allocationPercent must be a number between 0 and 100' });
+    return;
+  }
+
   const result = await goalsService.linkHolding(req.user!.id, goalId, holdingId, allocationPercent);
   ok(res, result, 201);
 });

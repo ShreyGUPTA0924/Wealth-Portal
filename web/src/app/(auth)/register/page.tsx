@@ -103,7 +103,7 @@ const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? '';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { setUser, isAuthenticated, user } = useAuthStore();
+  const { setUser, isAuthenticated, user, clearUser } = useAuthStore();
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -134,11 +134,28 @@ export default function RegisterPage() {
     onError: () => setApiError('Google sign-in failed. Please try again.'),
   });
 
+  // Redirect if already authenticated — verified against the server first,
+  // since a stale/expired localStorage session would otherwise bounce to
+  // /dashboard and immediately back to /login once the portal layout's own
+  // check fails.
   useEffect(() => {
-    if (isAuthenticated) {
-      router.replace(user?.onboardingCompleted ? '/dashboard' : '/onboarding');
-    }
-  }, [isAuthenticated, user, router]);
+    if (!isAuthenticated) return;
+    let cancelled = false;
+
+    apiClient
+      .get('/api/auth/me')
+      .then(() => {
+        if (cancelled) return;
+        router.replace(user?.onboardingCompleted ? '/dashboard' : '/onboarding');
+      })
+      .catch(() => {
+        if (!cancelled) clearUser();
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, user, router, clearUser]);
 
   const {
     register,

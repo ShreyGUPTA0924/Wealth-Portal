@@ -340,3 +340,26 @@ export async function enable2FA(userId: string, token: string): Promise<void> {
     data: { twoFaEnabled: true },
   });
 }
+
+/**
+ * Verify a current TOTP token, then turn 2FA off and clear the stored secret.
+ */
+export async function disable2FA(userId: string, token: string): Promise<void> {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw createError('User not found', 404);
+  if (!user.twoFaEnabled || !user.twoFaSecret) throw createError('2FA is not enabled', 400);
+
+  const isValid = speakeasy.totp.verify({
+    secret: user.twoFaSecret,
+    encoding: 'base32',
+    token,
+    window: 1,
+  });
+
+  if (!isValid) throw createError('Invalid authenticator code — please try again', 400);
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { twoFaEnabled: false, twoFaSecret: null },
+  });
+}

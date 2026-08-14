@@ -181,3 +181,20 @@ export async function verify2FA(req: Request, res: Response): Promise<void> {
     handleError(res, err);
   }
 }
+
+/**
+ * POST /api/auth/2fa/disable  [protected]
+ * Verifies a current TOTP token, then turns 2FA off and clears the secret.
+ */
+export async function disable2FA(req: Request, res: Response): Promise<void> {
+  try {
+    const { token } = req.body as { token: string };
+    await AuthService.disable2FA(req.user!.id, token);
+    res.status(200).json({
+      success: true,
+      data: { message: '2FA has been disabled on your account' },
+    });
+  } catch (err) {
+    handleError(res, err);
+  }
+}

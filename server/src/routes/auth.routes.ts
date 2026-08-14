@@ -76,4 +76,12 @@ router.post(
   AuthController.verify2FA
 );
 
+router.post(
+  '/2fa/disable',
+  authenticate,
+  otpLimiter,
+  validate({ body: verify2FASchema }),
+  AuthController.disable2FA
+);
+
 export default router;

@@ -141,10 +141,30 @@ function generateInsights(
   return insights.slice(0, 3);
 }
 
-// ─── Net-worth change simulation ──────────────────────────────────────────────
+// ─── Net-worth period change ──────────────────────────────────────────────────
+// We don't store daily market-value snapshots, so — same approach as
+// getNetWorthHistory below — approximate "value N days ago" as invested
+// capital as of that date (cumulative BUY/SIP minus SELL), then compare
+// against today's real current market value.
 
-function mockChangePercent(seed: number, multiplier: number): number {
-  return Math.round((seed % 5) * multiplier * 10) / 10;
+function computeChangePercent(
+  transactions: { transactionDate: Date; type: string; totalAmount: unknown }[],
+  currentValue: number,
+  days: number
+): number {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
+
+  let pastInvested = 0;
+  for (const tx of transactions) {
+    if (tx.transactionDate >= cutoff) continue;
+    const amount = toNum(tx.totalAmount);
+    if (tx.type === 'BUY' || tx.type === 'SIP') pastInvested += amount;
+    else if (tx.type === 'SELL') pastInvested -= amount;
+  }
+
+  if (pastInvested <= 0) return 0;
+  return Math.round(((currentValue - pastInvested) / pastInvested) * 1000) / 10;
 }
 
 // ─── Main dashboard aggregation ──────────────────────────────────────────────
@@ -153,7 +173,7 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
   const now = new Date();
 
   // Fetch all in parallel — include ALL portfolios (own + family members) for combined wealth
-  const [portfolios, goals, checklistTemplates, recentTxns] = await Promise.all([
+  const [portfolios, goals, checklistTemplates, recentTxns, allTxns] = await Promise.all([
     prisma.portfolio.findMany({
       where:   { userId },
       include: {
@@ -198,6 +218,10 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
       take:    5,
       include: { holding: { select: { name: true } } },
     }),
+    prisma.transaction.findMany({
+      where:  { userId },
+      select: { transactionDate: true, type: true, totalAmount: true },
+    }),
   ]);
 
   // ── Net worth (aggregate across own + family portfolios) ────────────────────
@@ -207,14 +231,12 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
   const pnlAbsolute   = currentValue - totalInvested;
   const pnlPercent    = totalInvested > 0 ? (pnlAbsolute / totalInvested) * 100 : 0;
 
-  // Period changes: zero when no portfolio, otherwise derive from a portfolio seed
-  const seed = Math.floor(totalInvested / 1000) % 10;
   const change = currentValue > 0
     ? {
-        today:    mockChangePercent(seed + 1, 0.3),
-        oneWeek:  mockChangePercent(seed + 2, 0.8),
-        oneMonth: mockChangePercent(seed + 3, 2.0),
-        oneYear:  mockChangePercent(seed + 4, 8.0),
+        today:    computeChangePercent(allTxns, currentValue, 1),
+        oneWeek:  computeChangePercent(allTxns, currentValue, 7),
+        oneMonth: computeChangePercent(allTxns, currentValue, 30),
+        oneYear:  computeChangePercent(allTxns, currentValue, 365),
       }
     : { today: 0, oneWeek: 0, oneMonth: 0, oneYear: 0 };
 
@@ -415,53 +437,66 @@ export async function toggleChecklistItem(
   return entry;
 }
 
-// ─── Net Worth History (mock) ─────────────────────────────────────────────────
+// ─── Net Worth History ─────────────────────────────────────────────────────
+// Reconstructed from real transaction history: cumulative invested capital
+// (BUY/SIP add, SELL subtracts) per day, with today's point anchored to the
+// portfolio's actual current market value rather than cost basis.
 
 export async function getNetWorthHistory(userId: string, period: string) {
-  const portfolios = await prisma.portfolio.findMany({
-    where:   { userId },
-    include: {
-      holdings: {
-        where: { isActive: true },
-        select: { currentValue: true, totalInvested: true },
-      },
-    },
-  });
-  // Aggregate across own + family portfolios (same as getDashboardData)
-  const holdings      = portfolios.flatMap((p) => p.holdings);
-  const currentValue  = holdings.reduce((s, h) => s + toNum(h.currentValue), 0);
-  const totalInvested = holdings.reduce((s, h) => s + toNum(h.totalInvested), 0);
-
-  const periodMap: Record<string, { days: number; label: string }> = {
-    '1M':  { days: 30,  label: '1M' },
-    '3M':  { days: 90,  label: '3M' },
-    '6M':  { days: 180, label: '6M' },
-    '1Y':  { days: 365, label: '1Y' },
-    'ALL': { days: 730, label: 'ALL' },
+  const periodDays: Record<string, number> = {
+    Today: 1, '1W': 7, '1M': 30, '3M': 90, '6M': 180, '1Y': 365, ALL: 36_500,
   };
+  const days   = periodDays[period] ?? periodDays['1M']!;
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
 
-  const cfg  = periodMap[period] ?? periodMap['1M']!;
-  const days = cfg.days;
-  const now  = new Date();
+  const transactions = await prisma.transaction.findMany({
+    where:   { userId },
+    orderBy: { transactionDate: 'asc' },
+    select:  { transactionDate: true, type: true, totalAmount: true },
+  });
 
-  // Generate smooth growth curve from invested → current
-  const dataPoints: { date: string; value: number }[] = [];
-  const steps = Math.min(days, 60);
-  // When no data, use a placeholder curve (0→100) so the chart always renders visibly
-  const hasData = totalInvested > 0 || currentValue > 0;
-  const startValue = hasData ? totalInvested * 0.9 : 0;
-  const endValue   = hasData ? currentValue : 100;
+  const dailyMap = new Map<string, number>();
+  let runningInvested = 0;
+  let seedValue        = 0; // invested total as of the cutoff date
 
-  for (let i = 0; i <= steps; i++) {
-    const t     = i / steps;
-    const date  = new Date(now.getTime() - (days - t * days) * 24 * 60 * 60 * 1000);
-    const noise = 1 + ((((i * 7 + 3) % 11) - 5) / 100) * 0.5;
-    const value = startValue + (endValue - startValue) * (t * t * (3 - 2 * t)) * noise;
-    dataPoints.push({
-      date:  date.toISOString().slice(0, 10),
-      value: Math.round(Math.max(0, value)),
-    });
+  for (const tx of transactions) {
+    const amount = toNum(tx.totalAmount);
+    if (tx.type === 'BUY' || tx.type === 'SIP') runningInvested += amount;
+    else if (tx.type === 'SELL') runningInvested -= amount;
+
+    if (tx.transactionDate < cutoff) {
+      // Fold pre-window transactions into the running total so the visible
+      // window starts at the user's real invested base, not zero.
+      seedValue = runningInvested;
+      continue;
+    }
+    dailyMap.set(tx.transactionDate.toISOString().slice(0, 10), runningInvested);
   }
 
-  return { period: cfg.label, dataPoints, isPlaceholder: !hasData };
+  const cutoffKey = cutoff.toISOString().slice(0, 10);
+  if (!dailyMap.has(cutoffKey)) dailyMap.set(cutoffKey, seedValue);
+
+  const portfolios = await prisma.portfolio.findMany({
+    where:  { userId },
+    select: { currentValue: true },
+  });
+  const totalCurrentValue = portfolios.reduce((s, p) => s + toNum(p.currentValue), 0);
+  const todayKey = new Date().toISOString().slice(0, 10);
+  if (totalCurrentValue > 0) dailyMap.set(todayKey, totalCurrentValue);
+
+  const dataPoints = Array.from(dailyMap.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, value]) => ({ date, value: Math.round(value * 100) / 100 }));
+
+  const hasData = dataPoints.some((p) => p.value !== 0);
+  if (!hasData) {
+    return {
+      period,
+      dataPoints: [{ date: cutoffKey, value: 0 }, { date: todayKey, value: 0 }],
+      isPlaceholder: true,
+    };
+  }
+
+  return { period, dataPoints, isPlaceholder: false };
 }

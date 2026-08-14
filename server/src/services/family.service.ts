@@ -203,21 +203,14 @@ export async function updateFamilyMember(
 }
 
 export async function deleteFamilyMember(userId: string, memberId: string) {
-  const existing = await prisma.familyMember.findFirst({
-    where:   { id: memberId, userId },
-    include: { portfolio: true },
-  });
+  const existing = await prisma.familyMember.findFirst({ where: { id: memberId, userId } });
   if (!existing) throw appError('Family member not found', 404);
 
-  // Soft delete: deactivate all holdings in their portfolio
-  if (existing.portfolio) {
-    await prisma.holding.updateMany({
-      where: { portfolioId: existing.portfolio.id },
-      data:  { isActive: false },
-    });
-  }
-
-  // Hard delete the member record (portfolio cascades but holdings stay inactive)
+  // Portfolio.familyMember has onDelete: Cascade, so this also removes the
+  // member's portfolio, holdings, transactions, and goals — it does not
+  // orphan the portfolio (which would otherwise become indistinguishable
+  // from the user's own main portfolio, since main-portfolio lookups match
+  // on familyMemberId: null).
   await prisma.familyMember.delete({ where: { id: memberId } });
 }
 

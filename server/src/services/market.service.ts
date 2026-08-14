@@ -1,7 +1,8 @@
 import axios from 'axios';
-import yahooFinance from 'yahoo-finance2';
-yahooFinance.suppressNotices(['yahooSurvey']);
+import YahooFinance from 'yahoo-finance2';
 import { cacheGet, cacheSet, cacheKey, TTL } from '../lib/redis';
+
+const yahooFinance = new YahooFinance({ suppressNotices: ['yahooSurvey'] });
 
 // ─── Shared types ─────────────────────────────────────────────────────────────
 

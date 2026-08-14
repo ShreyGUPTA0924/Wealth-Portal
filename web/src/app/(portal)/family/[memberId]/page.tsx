@@ -300,8 +300,12 @@ function GoalsSection({ goals, memberName }: { goals: Goal[]; memberName: string
 // ─── Allowance Tracker ────────────────────────────────────────────────────────
 
 function AllowanceTracker({ monthlyAllowance }: { monthlyAllowance: number }) {
-  const months = ['Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar'];
   const currentMonth = new Date().toLocaleString('en-IN', { month: 'short' });
+  const months = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date();
+    d.setMonth(d.getMonth() - (5 - i));
+    return d.toLocaleString('en-IN', { month: 'short' });
+  });
 
   return (
     <div className="bg-background-card rounded-2xl border border-border p-5">

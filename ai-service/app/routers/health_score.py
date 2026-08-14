@@ -8,8 +8,8 @@ import google.generativeai as genai
 
 router = APIRouter()
 
-genai.configure(api_key=os.environ.get("GEMINI_API_KEY", ""))
-model = genai.GenerativeModel("gemini-1.5-flash")
+genai.configure(api_key=os.environ.get("GEMINI_API_KEY_1", os.environ.get("GEMINI_API_KEY", "")))
+model = genai.GenerativeModel("gemini-2.5-flash")
 
 
 class HealthScoreRequest(BaseModel):

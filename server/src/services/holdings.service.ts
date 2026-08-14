@@ -376,18 +376,24 @@ export async function updateHolding(
   });
   if (!holding) throw appError('Holding not found', 404);
 
-  const currentPrice = dto.manualPrice ?? toNum(holding.currentPrice) ?? toNum(holding.avgBuyPrice);
+  const currentPrice = dto.manualPrice ?? (toNum(holding.currentPrice) || toNum(holding.avgBuyPrice));
   const qty          = dto.quantity    ?? toNum(holding.quantity);
   const invested     = qty * toNum(holding.avgBuyPrice);
   const currentValue = qty * currentPrice;
   const { pnlAbsolute, pnlPercent } = calculatePnl(invested, currentValue);
 
+  // Recompute currentValue/P&L whenever quantity or price changes — not just
+  // on manualPrice — otherwise a quantity-only edit leaves the portfolio total
+  // (which sums holding.currentValue straight from the DB) stale.
+  const valueChanged = dto.quantity !== undefined || dto.manualPrice !== undefined;
+
   const updated = await prisma.holding.update({
     where: { id: holdingId },
     data:  {
-      ...(dto.quantity    !== undefined ? { quantity: dto.quantity, totalInvested: invested }    : {}),
-      ...(dto.manualPrice !== undefined ? { currentPrice, currentValue, pnlAbsolute, pnlPercent } : {}),
+      ...(dto.quantity    !== undefined ? { quantity: dto.quantity, totalInvested: invested } : {}),
+      ...(dto.manualPrice !== undefined ? { currentPrice } : {}),
       ...(dto.notes       !== undefined ? { notes: dto.notes } : {}),
+      ...(valueChanged    ? { currentValue, pnlAbsolute, pnlPercent } : {}),
     },
   });
 
@@ -515,9 +521,19 @@ export async function importCsvHoldings(
         continue;
       }
 
-      // Duplicate check — same user + name + assetClass + approx buy date
+      // Duplicate check — same user + name + assetClass + buy date (day-level,
+      // to tolerate time-of-day differences in how the date string parses)
+      const buyDate  = new Date(row.buyDate);
+      const dayStart = new Date(buyDate);
+      dayStart.setHours(0, 0, 0, 0);
+      const dayEnd = new Date(buyDate);
+      dayEnd.setHours(23, 59, 59, 999);
+
       const existing = await prisma.holding.findFirst({
-        where: { userId, name: row.name, assetClass, isActive: true },
+        where: {
+          userId, name: row.name, assetClass, isActive: true,
+          firstBuyDate: { gte: dayStart, lte: dayEnd },
+        },
       });
 
       if (existing) {

@@ -30,7 +30,7 @@ const upload = multer({
 const assetClasses = Object.values(AssetClass) as [AssetClass, ...AssetClass[]];
 const txnTypes     = Object.values(TransactionType) as [TransactionType, ...TransactionType[]];
 
-const addHoldingSchema = z.object({
+export const addHoldingSchema = z.object({
   assetClass:   z.enum(assetClasses),
   symbol:       z.string().optional(),
   name:         z.string().min(1),
@@ -40,15 +40,19 @@ const addHoldingSchema = z.object({
   maturityDate: z.string().optional(),
   interestRate: z.number().optional(),
   notes:        z.string().optional(),
+  // Manual current-value estimate for non-priceable assets (REAL_ESTATE, NPS, …).
+  // Without this in the schema, the `validate` middleware's Zod parse strips it
+  // and every such holding silently gets currentValue === totalInvested (₹0 P&L).
+  currentPrice: z.number().positive().optional(),
 });
 
-const updateHoldingSchema = z.object({
+export const updateHoldingSchema = z.object({
   quantity:    z.number().positive().optional(),
   manualPrice: z.number().positive().optional(),
   notes:       z.string().optional(),
 }).refine((d) => Object.keys(d).length > 0, { message: 'At least one field required' });
 
-const addTransactionSchema = z.object({
+export const addTransactionSchema = z.object({
   type:         z.enum(txnTypes),
   quantity:     z.number().positive(),
   pricePerUnit: z.number().positive(),

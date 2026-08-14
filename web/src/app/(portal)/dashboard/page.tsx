@@ -134,11 +134,13 @@ function Skeleton({ className }: { className?: string }) {
 // ─── Net Worth Chart ─────────────────────────────────────────────────────────
 
 const HISTORY_PERIODS = [
-  { label: 'Today', value: '1M' },
-  { label: '1W',    value: '1M' },
+  { label: 'Today', value: 'Today' },
+  { label: '1W',    value: '1W' },
   { label: '1M',    value: '1M' },
   { label: '1Y',    value: '1Y' },
 ] as const;
+
+const HISTORY_DAYS: Record<string, number> = { Today: 1, '1W': 7, '1M': 30, '1Y': 365 };
 
 /** Generate fallback mock data when API returns empty */
 function generateFallbackHistory(currentNetWorth: number, days = 30): { date: string; value: number }[] {
@@ -159,7 +161,7 @@ function generateFallbackHistory(currentNetWorth: number, days = 30): { date: st
 
 function NetWorthSection({ data }: { data: DashboardData }) {
   const [period, setPeriod] = useState<'Today' | '1W' | '1M' | '1Y'>('1M');
-  const apiPeriod = period === '1Y' ? '1Y' : '1M';
+  const apiPeriod = period;
 
   // Track seconds since last refetch
   const [secondsSince, setSecondsSince] = useState(0);
@@ -194,7 +196,7 @@ function NetWorthSection({ data }: { data: DashboardData }) {
   const isPlaceholder = historyData?.isPlaceholder ?? false;
   const chartData   = rawPoints.length > 0
     ? rawPoints
-    : generateFallbackHistory(Math.max(data.netWorth.current ?? 0, 1), period === '1Y' ? 365 : 30);
+    : generateFallbackHistory(Math.max(data.netWorth.current ?? 0, 1), HISTORY_DAYS[period] ?? 30);
 
   const bestPerformer = [...(data.topGainers ?? [])].sort((a, b) => b.pnlPercent - a.pnlPercent)[0];
   const stats = [

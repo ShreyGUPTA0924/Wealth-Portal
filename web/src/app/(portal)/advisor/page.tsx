@@ -464,6 +464,7 @@ export default function AdvisorPage() {
       const decoder = new TextDecoder();
       let   buffer  = '';
       let   fullContent = '';
+      let   streamError: string | null = null;
       let   resolvedSessionId = activeSessionId;
 
       while (true) {
@@ -494,11 +495,13 @@ export default function AdvisorPage() {
             } else if (parsed.chunk) {
               fullContent += parsed.chunk;
               setStreamingContent(fullContent);
+            } else if (parsed.error) {
+              streamError = parsed.error;
             } else if (parsed.done) {
               const assistantMsg: ChatMessage = {
                 id: `tmp-assist-${Date.now()}`,
                 role: 'ASSISTANT',
-                content: fullContent || 'Sorry, I could not generate a response.',
+                content: fullContent || streamError || 'Sorry, I could not generate a response.',
                 createdAt: new Date().toISOString(),
               };
               setMessages((prev) => [...prev, assistantMsg]);

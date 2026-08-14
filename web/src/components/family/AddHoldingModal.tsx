@@ -35,6 +35,9 @@ interface AddHoldingModalProps {
 const inputClass =
   'block w-full px-3.5 py-2.5 border border-border rounded-xl text-sm text-foreground bg-background-card focus:outline-none focus:ring-2 focus:ring-[#3C3489]/20 focus:border-[#3C3489]';
 
+/** "0" is truthy as a string — this checks it actually parses to a positive number */
+const isPositive = (s: string) => !!s && parseFloat(s) > 0;
+
 export function AddHoldingModal({ member, onClose, onSuccess }: AddHoldingModalProps) {
   const queryClient = useQueryClient();
   const [form, setForm] = useState({
@@ -107,10 +110,10 @@ export function AddHoldingModal({ member, onClose, onSuccess }: AddHoldingModalP
   const canSubmit =
     form.name.trim() &&
     form.buyDate &&
-    (isRealEstate ? !!form.buyPrice : true) &&
-    (isNPS        ? !!form.quantity : true) &&
-    (isStandard && !needsSavings ? (!!form.quantity && !!form.buyPrice) : true) &&
-    (isStandard && needsSavings  ? !!form.quantity : true) &&
+    (isRealEstate ? isPositive(form.buyPrice) : true) &&
+    (isNPS        ? isPositive(form.quantity) : true) &&
+    (isStandard && !needsSavings ? (isPositive(form.quantity) && isPositive(form.buyPrice)) : true) &&
+    (isStandard && needsSavings  ? isPositive(form.quantity) : true) &&
     !mutation.isPending;
 
   return (

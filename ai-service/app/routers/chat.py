@@ -9,7 +9,7 @@ from app.gemini_client import RobustGeminiClient
 
 router = APIRouter()
 
-model = RobustGeminiClient("gemini-1.5-flash")
+model = RobustGeminiClient("gemini-2.5-flash")
 
 SYSTEM_PROMPT = """You are WealthWise AI, a personal financial advisor for Indian investors.
 You have access to the user complete financial data.

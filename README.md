@@ -164,7 +164,7 @@ Wealth-Portal/
 | 🟣 | **Frontend** | Next.js 16, React 19, TypeScript, Tailwind CSS 4, Framer Motion, Recharts, Lucide, React Hook Form + Zod, TanStack Query, Zustand, next-themes |
 | 🌿 | **Backend** | Node.js, Express 5, Prisma 5, PostgreSQL, Zod, JWT, bcrypt, Bull (deps), ioredis, yahoo-finance2, node-cron, multer, Nodemailer, Speakeasy, Helmet, rate limiting |
 | 🔮 | **AI** | Python, FastAPI, google-generativeai, pdfplumber, httpx |
-| ☁️ | **Infra** | Supabase-style Postgres URLs, optional Redis, CORS friendly for Vercel + Render (`*.onrender.com`) |
+| ☁️ | **Infra** | Deployed on Render (web + server + ai-service + Postgres + Redis), CORS friendly for `*.onrender.com` |
 
 ---
 

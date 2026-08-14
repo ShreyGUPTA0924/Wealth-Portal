@@ -205,7 +205,147 @@ function ProfileTab({ profile, onToast }: { profile: UserProfile; onToast: (msg:
 
 // ─── TAB 2 — Security ────────────────────────────────────────────────────────
 
+/** Pull the manual-entry secret out of an otpauth:// URL (no QR scan needed) */
+function extractTotpSecret(otpauthUrl: string): string {
+  try {
+    return new URL(otpauthUrl).searchParams.get('secret') ?? '';
+  } catch {
+    return '';
+  }
+}
+
+function TwoFaSetupModal({ onClose, onToast, onEnabled }: {
+  onClose: () => void;
+  onToast: (msg: string, type: 'success' | 'error') => void;
+  onEnabled: () => void;
+}) {
+  const [code, setCode] = useState('');
+  const [error, setError] = useState('');
+
+  const { data: setupData, isLoading: isStartingSetup, error: setupError } = useQuery({
+    queryKey: ['2fa-setup'],
+    queryFn:  () =>
+      apiClient.post<{ success: boolean; data: { otpauthUrl: string } }>('/api/auth/2fa/setup')
+        .then(r => r.data.data),
+    staleTime: Infinity,
+  });
+
+  const verifyMutation = useMutation({
+    mutationFn: () => apiClient.post('/api/auth/2fa/verify', { token: code }),
+    onSuccess: () => {
+      onToast('2FA has been enabled on your account', 'success');
+      onEnabled();
+      onClose();
+    },
+    onError: (err) => setError(getErrorMessage(err)),
+  });
+
+  const secret = setupData ? extractTotpSecret(setupData.otpauthUrl) : '';
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+      <div className="w-full max-w-sm bg-background-card rounded-2xl border border-border p-5 space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+            <QrCode className="w-4 h-4" /> Enable Two-Factor Authentication
+          </h3>
+          <button onClick={onClose} className="text-foreground-muted hover:text-foreground">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {isStartingSetup && <p className="text-xs text-foreground-muted">Generating your secret key…</p>}
+        {setupError && <p className="text-xs text-red-500">{getErrorMessage(setupError)}</p>}
+
+        {setupData && (
+          <>
+            <p className="text-xs text-foreground-muted">
+              Add a new account in your authenticator app (Google Authenticator, Authy, 1Password…)
+              and enter this key manually:
+            </p>
+            <code className="block text-center text-sm font-mono tracking-widest bg-background border border-border rounded-xl px-3 py-2.5 select-all break-all">
+              {secret || 'Unavailable'}
+            </code>
+            <Field label="6-digit code from your app">
+              <input
+                type="text" inputMode="numeric" maxLength={6} value={code}
+                onChange={e => setCode(e.target.value.replace(/\D/g, ''))}
+                className={inputClass} placeholder="123456" autoFocus
+              />
+            </Field>
+            {error && <p className="text-xs text-red-500">{error}</p>}
+            <button
+              onClick={() => { setError(''); verifyMutation.mutate(); }}
+              disabled={code.length !== 6 || verifyMutation.isPending}
+              className="w-full py-2.5 rounded-xl text-sm font-semibold text-white bg-[#3C3489] hover:bg-[#2d2871]
+                         disabled:opacity-60 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+            >
+              {verifyMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+              Verify &amp; Enable
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function TwoFaDisableModal({ onClose, onToast, onDisabled }: {
+  onClose: () => void;
+  onToast: (msg: string, type: 'success' | 'error') => void;
+  onDisabled: () => void;
+}) {
+  const [code, setCode] = useState('');
+  const [error, setError] = useState('');
+
+  const disableMutation = useMutation({
+    mutationFn: () => apiClient.post('/api/auth/2fa/disable', { token: code }),
+    onSuccess: () => {
+      onToast('2FA has been disabled on your account', 'success');
+      onDisabled();
+      onClose();
+    },
+    onError: (err) => setError(getErrorMessage(err)),
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+      <div className="w-full max-w-sm bg-background-card rounded-2xl border border-border p-5 space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+            <Shield className="w-4 h-4" /> Disable Two-Factor Authentication
+          </h3>
+          <button onClick={onClose} className="text-foreground-muted hover:text-foreground">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <p className="text-xs text-foreground-muted">
+          Enter the current 6-digit code from your authenticator app to confirm.
+        </p>
+        <Field label="6-digit code">
+          <input
+            type="text" inputMode="numeric" maxLength={6} value={code}
+            onChange={e => setCode(e.target.value.replace(/\D/g, ''))}
+            className={inputClass} placeholder="123456" autoFocus
+          />
+        </Field>
+        {error && <p className="text-xs text-red-500">{error}</p>}
+        <button
+          onClick={() => { setError(''); disableMutation.mutate(); }}
+          disabled={code.length !== 6 || disableMutation.isPending}
+          className="w-full py-2.5 rounded-xl text-sm font-semibold text-white bg-red-600 hover:bg-red-700
+                     disabled:opacity-60 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+        >
+          {disableMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+          Verify &amp; Disable
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function SecurityTab({ onToast }: { onToast: (msg: string, type: 'success' | 'error') => void }) {
+  const queryClient = useQueryClient();
   const { data: twoFaStatus } = useQuery({
     queryKey: ['2fa-status'],
     queryFn:  () =>
@@ -213,6 +353,8 @@ function SecurityTab({ onToast }: { onToast: (msg: string, type: 'success' | 'er
         .then(r => r.data.data),
     staleTime: 60_000,
   });
+  const [show2faSetup,   setShow2faSetup]   = useState(false);
+  const [show2faDisable, setShow2faDisable] = useState(false);
 
   const [currentPw,  setCurrentPw]  = useState('');
   const [newPw,      setNewPw]      = useState('');
@@ -327,19 +469,34 @@ function SecurityTab({ onToast }: { onToast: (msg: string, type: 'success' | 'er
         <div className="mt-4 flex gap-3">
           {!twoFaStatus?.twoFaEnabled ? (
             <button
-              onClick={() => onToast('2FA setup is available in Account Security — contact support', 'success')}
+              onClick={() => setShow2faSetup(true)}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#3C3489]/10 text-[#3C3489] text-sm font-semibold hover:bg-[#3C3489]/20 transition-colors">
               <QrCode className="w-4 h-4" /> Enable 2FA
             </button>
           ) : (
             <button
-              onClick={() => onToast('To disable 2FA, please verify your TOTP code first', 'error')}
+              onClick={() => setShow2faDisable(true)}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-50 text-red-600 text-sm font-semibold hover:bg-red-100 transition-colors border border-red-200">
               <Shield className="w-4 h-4" /> Disable 2FA
             </button>
           )}
         </div>
       </div>
+
+      {show2faSetup && (
+        <TwoFaSetupModal
+          onClose={() => setShow2faSetup(false)}
+          onToast={onToast}
+          onEnabled={() => queryClient.invalidateQueries({ queryKey: ['2fa-status'] })}
+        />
+      )}
+      {show2faDisable && (
+        <TwoFaDisableModal
+          onClose={() => setShow2faDisable(false)}
+          onToast={onToast}
+          onDisabled={() => queryClient.invalidateQueries({ queryKey: ['2fa-status'] })}
+        />
+      )}
     </div>
   );
 }

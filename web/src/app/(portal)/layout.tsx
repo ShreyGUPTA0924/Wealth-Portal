@@ -270,7 +270,9 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
   const router          = useRouter();
   const { isAuthenticated, _hasHydrated, clearUser, setUser } = useAuthStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [checkingSession, setCheckingSession] = useState(false);
+  // Starts true (not false) so the portal UI doesn't flash for one frame
+  // before the session-check effect below has a chance to run.
+  const [checkingSession, setCheckingSession] = useState(true);
 
   useEffect(() => {
     if (_hasHydrated && !isAuthenticated) {

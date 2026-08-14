@@ -201,7 +201,7 @@ model Portfolio {
 
   // Relations
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  familyMember FamilyMember? @relation(fields: [familyMemberId], references: [id])
+  familyMember FamilyMember? @relation(fields: [familyMemberId], references: [id], onDelete: Cascade)
   holdings     Holding[]
   goals        Goal[]
 
