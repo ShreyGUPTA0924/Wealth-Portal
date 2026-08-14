@@ -7,6 +7,7 @@ import { syncGoalCurrentAmounts } from '../services/goals.service';
 
 let dbUnavailable = false;
 let dbUnavailableWarned = false;
+let jobRunCount = 0;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -84,6 +85,7 @@ async function syncFixedIncomeValues(): Promise<void> {
         where: { portfolioId: pid, isActive: true },
         _sum: { currentValue: true, totalInvested: true },
       });
+
       await prisma.portfolio.update({
         where: { id: pid },
         data: {
@@ -93,9 +95,11 @@ async function syncFixedIncomeValues(): Promise<void> {
       });
     }
   }
+
+  console.log(`[PriceSync] Fixed-income sync complete. Updated ${fixedHoldings.length} holdings.`);
 }
 
-// ─── Core sync logic ──────────────────────────────────────────────────────────
+// ─── Core sync logic ───────────────────────────────────────────────────────────
 
 async function syncPrices(): Promise<void> {
   const startedAt = Date.now();
@@ -110,7 +114,10 @@ async function syncPrices(): Promise<void> {
       select: { id: true, portfolioId: true, assetClass: true, symbol: true, quantity: true, totalInvested: true },
     });
 
-    if (holdings.length === 0) return;
+    if (holdings.length === 0) {
+      console.log('[PriceSync] No holdings to sync');
+      return;
+    }
 
     // Deduplicate: only fetch a price once per (assetClass, symbol) pair
     const unique = new Map<string, HoldingRow>();
@@ -123,6 +130,8 @@ async function syncPrices(): Promise<void> {
     // Fetch prices (concurrently, but cap at 5 at a time to respect rate limits)
     const entries = Array.from(unique.entries());
     const BATCH = 5;
+    let pricesUpdated = 0;
+    let priceErrors = 0;
 
     for (let i = 0; i < entries.length; i += BATCH) {
       const batch = entries.slice(i, i + BATCH);
@@ -141,7 +150,7 @@ async function syncPrices(): Promise<void> {
                 (h.symbol === holding.symbol || holding.assetClass === 'GOLD')
             );
 
-              await Promise.allSettled(
+            await Promise.allSettled(
               matchingHoldings.map(async (h) => {
                 const qty           = parseFloat(h.quantity.toString());
                 const totalInvested = parseFloat(h.totalInvested.toString());
@@ -173,9 +182,12 @@ async function syncPrices(): Promise<void> {
                     data: { xirr: safeXirr },
                   });
                 }
+
+                pricesUpdated++;
               })
             );
           } catch (err) {
+            priceErrors++;
             const error = err as Error;
             console.warn(`[PriceSync] Failed to sync ${key}: ${error.message}`);
           }
@@ -212,11 +224,13 @@ async function syncPrices(): Promise<void> {
     await syncFixedIncomeValues();
 
     // Sync goal currentAmount from linked holdings
-    await syncGoalCurrentAmounts();
+    await syncGoalCurrentAmounts().catch((err) =>
+      console.warn('[PriceSync] Goal sync failed:', err instanceof Error ? err.message : err)
+    );
 
     const elapsed = Date.now() - startedAt;
     console.log(
-      `[PriceSync] Synced ${unique.size} unique symbols across ${holdings.length} holdings in ${elapsed}ms`
+      `[PriceSync #${jobRunCount}] Synced ${unique.size} symbols, updated ${pricesUpdated} holdings (${priceErrors} errors) in ${elapsed}ms`
     );
   } catch (err) {
     const error = err as Error;
@@ -276,13 +290,17 @@ export function startPriceSyncJob(): void {
 
   task = cron.schedule(schedule, () => {
     if (dbUnavailable) return;
+    jobRunCount++;
     syncPrices().catch(() => {}); // already handled inside
   });
 
   console.log(`[PriceSync] Job scheduled (${isProd ? 'market hours only' : 'every minute'}) ✓`);
 
   // Run once immediately on startup so prices are fresh on first load
-  if (!dbUnavailable) void syncPrices();
+  if (!dbUnavailable) {
+    jobRunCount++;
+    void syncPrices();
+  }
 }
 
 /** Stop the job (useful for graceful shutdown) */
